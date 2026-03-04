@@ -36,7 +36,7 @@ export const getSubject = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const subjectId = parseInt(req.params.subjectId);
+        const subjectId = parseInt(req.params.subjectId as string);
         if (isNaN(subjectId)) {
             res.status(400).json({ success: false, error: { message: 'Invalid subject ID' } });
             return;
@@ -57,7 +57,7 @@ export const getSubjectTree = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const subjectId = parseInt(req.params.subjectId);
+        const subjectId = parseInt(req.params.subjectId as string);
         if (isNaN(subjectId)) {
             res.status(400).json({ success: false, error: { message: 'Invalid subject ID' } });
             return;
@@ -78,7 +78,7 @@ export const getFirstVideo = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const subjectId = parseInt(req.params.subjectId);
+        const subjectId = parseInt(req.params.subjectId as string);
         if (isNaN(subjectId)) {
             res.status(400).json({ success: false, error: { message: 'Invalid subject ID' } });
             return;

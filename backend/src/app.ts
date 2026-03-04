@@ -10,6 +10,7 @@ import healthRoutes from './modules/health/health.routes';
 import authRoutes from './modules/auth/auth.routes';
 import subjectRoutes from './modules/subjects/subject.routes';
 import videoRoutes from './modules/videos/video.routes';
+import progressRoutes from './modules/progress/progress.routes';
 
 const app = express();
 
@@ -24,8 +25,7 @@ app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/videos', videoRoutes);
-// Future route mounts (added in subsequent phases):
-// app.use('/api/progress', progressRoutes);
+app.use('/api/progress', progressRoutes);
 
 // ── Error Handler (must be last) ────────────────────────────────
 app.use(errorHandler);

@@ -8,7 +8,7 @@ export const getVideo = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const videoId = parseInt(req.params.videoId);
+        const videoId = parseInt(req.params.videoId as string);
         if (isNaN(videoId)) {
             res.status(400).json({ success: false, error: { message: 'Invalid video ID' } });
             return;
