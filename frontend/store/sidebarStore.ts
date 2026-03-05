@@ -24,7 +24,7 @@ interface SidebarState {
     setTree: (tree: Section[]) => void;
     setLoading: (loading: boolean) => void;
     setError: (error: string | null) => void;
-    markVideoCompleted: (videoId: number) => void;
+    markVideoCompleted: (videoId: number, nextVideoId?: number | null) => void;
 }
 
 export const useSidebarStore = create<SidebarState>((set) => ({
@@ -36,13 +36,15 @@ export const useSidebarStore = create<SidebarState>((set) => ({
     setLoading: (loading) => set({ loading }),
     setError: (error) => set({ error, loading: false }),
 
-    markVideoCompleted: (videoId) =>
+    markVideoCompleted: (videoId, nextVideoId) =>
         set((state) => ({
             tree: state.tree.map((section) => ({
                 ...section,
-                videos: section.videos.map((v) =>
-                    v.id === videoId ? { ...v, is_completed: true } : v
-                ),
+                videos: section.videos.map((v) => {
+                    if (v.id === videoId) return { ...v, is_completed: true };
+                    if (nextVideoId && v.id === nextVideoId) return { ...v, locked: false };
+                    return v;
+                }),
             })),
         })),
 }));

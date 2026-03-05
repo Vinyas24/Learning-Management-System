@@ -86,8 +86,8 @@ export default function VideoPage() {
         // 1. Immediately send completion network call
         sendProgress(videoId, { last_position_seconds: 0, is_completed: true });
 
-        // 2. Optimistically update local sidebar state to show the green checkmark
-        markVideoCompleted(videoId);
+        // 2. Optimistically update local sidebar state to show the green checkmark AND unlock the next video
+        markVideoCompleted(videoId, video?.nextVideoId);
 
         // 3. Auto-advance if there is a next video
         if (video?.nextVideoId) {
@@ -129,71 +129,48 @@ export default function VideoPage() {
     }
 
     return (
-        <div className="p-4 md:p-6 lg:p-8 max-w-[1400px] mx-auto auto-rows-max animate-fade-in">
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-
-                {/* Left Video Column */}
-                <div className="xl:col-span-2">
-                    <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] overflow-hidden shadow-sm mb-6">
-                        <div className="aspect-video w-full bg-black relative">
-                            <VideoPlayer
-                                videoId={videoId}
-                                youtubeUrl={video.youtube_url}
-                                initialPosition={initialPosition}
-                                onComplete={handleVideoComplete}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="flex justify-between items-center mb-4 md:hidden">
-                        {video.prevVideoId ? (
-                            <button onClick={() => router.push(`/subjects/${subjectId}/video/${video.prevVideoId}`)} className="btn btn-ghost !text-xs px-2 py-1">
-                                &larr; Prev
-                            </button>
-                        ) : <div />}
-                        {video.nextVideoId ? (
-                            <button onClick={() => router.push(`/subjects/${subjectId}/video/${video.nextVideoId}`)} className="btn btn-ghost !text-xs px-2 py-1 text-[var(--color-accent)]">
-                                Next &rarr;
-                            </button>
-                        ) : <div />}
-                    </div>
+        <div className="p-4 md:p-6 md:py-8 max-w-5xl mx-auto animate-fade-in">
+            {/* Video Player Section */}
+            <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] overflow-hidden shadow-sm mb-6">
+                <div className="aspect-video w-full bg-black relative">
+                    <VideoPlayer
+                        videoId={videoId}
+                        youtubeUrl={video.youtube_url}
+                        initialPosition={initialPosition}
+                        onComplete={handleVideoComplete}
+                    />
                 </div>
+            </div>
 
-                {/* Right Details Column */}
-                <div className="xl:col-span-1">
-                    <div className="sticky top-[5.5rem]">
-                        <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] p-6 shadow-sm">
-                            <VideoMeta
-                                title={video.title}
-                                description={video.description}
-                                sectionTitle={video.section.title}
-                                subjectTitle={video.subject.title}
-                            />
+            {/* Video Details & Pagination Section */}
+            <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] p-6 md:p-8 shadow-sm">
+                <VideoMeta
+                    title={video.title}
+                    description={video.description}
+                    sectionTitle={video.section?.title || 'Unknown Section'}
+                    subjectTitle={video.subject?.title || 'Unknown Subject'}
+                />
 
-                            {/* Pagination Desktop */}
-                            <div className="hidden md:flex justify-between mt-8 pt-6 border-t border-[var(--color-border)]">
-                                <button
-                                    onClick={() => video.prevVideoId && router.push(`/subjects/${subjectId}/video/${video.prevVideoId}`)}
-                                    className={`btn btn-ghost px-3 ${!video.prevVideoId ? 'opacity-0 pointer-events-none' : ''}`}
-                                >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1">
-                                        <path d="m15 18-6-6 6-6" />
-                                    </svg>
-                                    Previous
-                                </button>
+                <div className="flex justify-between mt-8 pt-6 border-t border-[var(--color-border)]">
+                    <button
+                        onClick={() => video.prevVideoId && router.push(`/subjects/${subjectId}/video/${video.prevVideoId}`)}
+                        className={`btn btn-ghost px-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)] ${!video.prevVideoId ? 'opacity-0 pointer-events-none' : ''}`}
+                    >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5 opacity-70">
+                            <path d="m15 18-6-6 6-6" />
+                        </svg>
+                        Previous
+                    </button>
 
-                                <button
-                                    onClick={() => video.nextVideoId && router.push(`/subjects/${subjectId}/video/${video.nextVideoId}`)}
-                                    className={`btn btn-primary px-4 ${!video.nextVideoId ? 'opacity-0 pointer-events-none' : ''}`}
-                                >
-                                    Next Lesson
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1">
-                                        <path d="m9 18 6-6-6-6" />
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <button
+                        onClick={() => video.nextVideoId && router.push(`/subjects/${subjectId}/video/${video.nextVideoId}`)}
+                        className={`btn bg-[var(--color-accent-light)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm ${!video.nextVideoId ? 'opacity-0 pointer-events-none' : ''}`}
+                    >
+                        Next Lesson
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5">
+                            <path d="m9 18 6-6-6-6" />
+                        </svg>
+                    </button>
                 </div>
             </div>
         </div>

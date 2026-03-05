@@ -61,12 +61,16 @@ export const getVideo = async (videoId: number, userId: number) => {
         youtube_url: video.youtube_url,
         order_index: video.order_index,
         duration_seconds: video.duration_seconds,
-        section_id: section.id,
-        section_title: section.title,
-        subject_id: subject.id,
-        subject_title: subject.title,
-        previous_video_id: prevId,
-        next_video_id: nextId,
+        section: {
+            id: section.id,
+            title: section.title,
+        },
+        subject: {
+            id: subject.id,
+            title: subject.title,
+        },
+        prevVideoId: prevId,
+        nextVideoId: nextId,
         locked,
         unlock_reason: unlockReason,
     };

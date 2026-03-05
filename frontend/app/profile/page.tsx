@@ -111,14 +111,14 @@ export default function ProfilePage() {
                                         {item.title}
                                     </h3>
 
-                                    <div className="flex justify-between text-xs text-[var(--color-text-secondary)] mb-2">
-                                        <span>{item.progress.completed_videos} / {item.progress.total_videos} lessons</span>
-                                        <span className="font-semibold">{item.progress.percent_complete}%</span>
+                                    <div className="flex justify-between items-end text-xs text-[var(--color-text-secondary)] mb-2 mt-4">
+                                        <span className="font-medium tracking-wide">{item.progress.completed_videos} / {item.progress.total_videos} lessons</span>
+                                        <span className="font-bold text-sm text-[var(--color-text)]">{item.progress.percent_complete}%</span>
                                     </div>
 
-                                    <div className="w-full bg-[var(--color-bg)] h-2 rounded-full overflow-hidden">
+                                    <div className="w-full bg-[var(--color-border)] h-2.5 rounded-full overflow-hidden">
                                         <div
-                                            className="bg-[var(--color-accent)] h-full transition-all"
+                                            className="bg-[var(--color-accent)] h-full transition-all duration-500 ease-out rounded-full"
                                             style={{ width: `${item.progress.percent_complete}%` }}
                                         />
                                     </div>

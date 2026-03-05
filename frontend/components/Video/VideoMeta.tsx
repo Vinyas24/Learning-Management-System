@@ -14,15 +14,15 @@ export default function VideoMeta({ title, description, sectionTitle, subjectTit
         <div className="video-meta animate-fade-in">
             <VideoProgressBar />
 
-            <div className="breadcrumbs mb-3 text-sm font-medium tracking-wide" style={{ color: 'var(--color-accent)' }}>
-                {subjectTitle} <span className="text-[var(--color-border)] mx-2">/</span> {sectionTitle}
+            <div className="breadcrumbs mt-4 mb-3 text-xs font-semibold tracking-widest uppercase text-[var(--color-text-muted)]">
+                {subjectTitle} <span className="text-[var(--color-border)] mx-1">/</span> {sectionTitle}
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-4">{title}</h1>
+            <h1 className="text-xl md:text-2xl font-bold tracking-tight mb-6">{title}</h1>
 
             <div className="video-description">
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-[var(--color-text-secondary)] mb-2">Lesson Details</h3>
-                <p className="text-[var(--color-text)] leading-relaxed whitespace-pre-wrap">
+                <h3 className="text-[0.7rem] font-bold uppercase tracking-widest text-[var(--color-text-muted)] mb-3">Lesson Details</h3>
+                <p className="text-[var(--color-text-secondary)] text-[0.9rem] leading-relaxed whitespace-pre-wrap">
                     {description || 'No additional details provided for this lesson.'}
                 </p>
             </div>
