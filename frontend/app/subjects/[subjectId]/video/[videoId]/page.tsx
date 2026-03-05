@@ -129,9 +129,9 @@ export default function VideoPage() {
     }
 
     return (
-        <div className="p-4 md:p-6 md:pb-12 pt-24 max-w-[1200px] mx-auto animate-fade-in">
+        <div style={{ padding: '24px 24px 48px', maxWidth: '1200px', margin: '0 auto' }}>
             {/* Video Player Section */}
-            <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] overflow-hidden shadow-sm mb-6">
+            <div style={{ borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 24px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
                 <div className="aspect-video w-full bg-black relative">
                     <VideoPlayer
                         videoId={videoId}
@@ -143,7 +143,14 @@ export default function VideoPage() {
             </div>
 
             {/* Video Details & Pagination Section */}
-            <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] p-6 md:p-8 shadow-sm">
+            <div style={{
+                background: 'rgba(255,251,245,0.88)',
+                backdropFilter: 'blur(14px)',
+                borderRadius: '20px',
+                border: '1.5px solid rgba(249,115,22,0.1)',
+                padding: '28px 32px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+            }}>
                 <VideoMeta
                     title={video.title}
                     description={video.description}
@@ -151,12 +158,28 @@ export default function VideoPage() {
                     subjectTitle={video.subject?.title || 'Unknown Subject'}
                 />
 
-                <div className="flex justify-between mt-8 pt-6 border-t border-[var(--color-border)]">
+                {/* Navigation */}
+                <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    marginTop: '28px', paddingTop: '24px',
+                    borderTop: '1px solid #f3f4f6',
+                    gap: '12px',
+                }}>
                     <button
                         onClick={() => video.prevVideoId && router.push(`/subjects/${subjectId}/video/${video.prevVideoId}`)}
-                        className={`btn btn-ghost px-2 text-sm text-[var(--color-text-secondary)] hover:text-[var(--color-text)] ${!video.prevVideoId ? 'opacity-0 pointer-events-none' : ''}`}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '8px',
+                            padding: '12px 24px', borderRadius: '99px',
+                            background: 'rgba(255,251,245,0.85)', border: '1.5px solid rgba(249,115,22,0.15)',
+                            fontSize: '14px', fontWeight: 700, color: '#374151',
+                            cursor: video.prevVideoId ? 'pointer' : 'default',
+                            opacity: video.prevVideoId ? 1 : 0,
+                            pointerEvents: video.prevVideoId ? 'auto' : 'none',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                            transition: 'all 0.2s',
+                        }}
                     >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-1.5 opacity-70">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="m15 18-6-6 6-6" />
                         </svg>
                         Previous
@@ -164,10 +187,21 @@ export default function VideoPage() {
 
                     <button
                         onClick={() => video.nextVideoId && router.push(`/subjects/${subjectId}/video/${video.nextVideoId}`)}
-                        className={`btn bg-[var(--color-accent-light)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-white px-5 py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm ${!video.nextVideoId ? 'opacity-0 pointer-events-none' : ''}`}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '10px',
+                            padding: '14px 32px', borderRadius: '99px',
+                            background: 'linear-gradient(135deg, #f97316, #ec4899)',
+                            border: 'none',
+                            fontSize: '15px', fontWeight: 800, color: 'white',
+                            cursor: video.nextVideoId ? 'pointer' : 'default',
+                            opacity: video.nextVideoId ? 1 : 0,
+                            pointerEvents: video.nextVideoId ? 'auto' : 'none',
+                            boxShadow: '0 8px 24px rgba(249,115,22,0.35)',
+                            transition: 'all 0.2s',
+                        }}
                     >
                         Next Lesson
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1.5">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <path d="m9 18 6-6-6-6" />
                         </svg>
                     </button>

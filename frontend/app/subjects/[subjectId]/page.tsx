@@ -36,7 +36,6 @@ export default function SubjectPage() {
                 const [subjectRes, progressRes] = await Promise.all([
                     apiClient<{ data: SubjectDetails }>(`/api/subjects/${subjectId}`),
                     apiClient<{ data: SubjectProgress }>(`/api/progress/subjects/${subjectId}`).catch(() => ({
-                        // Fallback if progress fails or isn't tracked yet
                         data: { total_videos: 0, completed_videos: 0, percent_complete: 0, last_video_id: null }
                     }))
                 ]);
@@ -60,30 +59,29 @@ export default function SubjectPage() {
                 router.push(`/subjects/${subjectId}/video/${progress.last_video_id}`);
                 return;
             }
-
             const res = await apiClient<{ data: { videoId: number } }>(`/api/subjects/${subjectId}/first-video`);
             router.push(`/subjects/${subjectId}/video/${res.data.videoId}`);
-        } catch (err) {
+        } catch {
             alert('Could not start course. No videos found.');
         }
     };
 
+    /* ── Loading ── */
     if (loading) {
         return (
-            <div className="p-8 animate-pulse max-w-3xl">
-                <div className="h-10 bg-[var(--color-border)] rounded w-3/4 mb-6"></div>
-                <div className="h-4 bg-[var(--color-surface-hover)] rounded w-full mb-2"></div>
-                <div className="h-4 bg-[var(--color-surface-hover)] rounded w-full mb-2"></div>
-                <div className="h-4 bg-[var(--color-surface-hover)] rounded w-2/3 mb-10"></div>
-                <div className="h-24 bg-[var(--color-surface)] rounded-xl w-full border border-[var(--color-border)]"></div>
+            <div style={{ padding: '32px', maxWidth: '800px' }}>
+                {[1, 2, 3].map(i => (
+                    <div key={i} style={{ background: '#f3f4f6', borderRadius: '12px', height: i === 1 ? '48px' : '20px', marginBottom: '16px', width: i === 3 ? '60%' : '100%' }} />
+                ))}
             </div>
         );
     }
 
+    /* ── Error ── */
     if (error || !subject) {
         return (
-            <div className="p-8">
-                <div className="bg-[var(--color-error-light)] text-[var(--color-error)] p-4 rounded-lg border border-[rgba(239,68,68,0.2)] inline-block">
+            <div style={{ padding: '32px' }}>
+                <div style={{ background: '#fff1f2', color: '#e11d48', padding: '20px 24px', borderRadius: '16px', border: '1px solid #fecdd3', fontSize: '15px', fontWeight: 600 }}>
                     {error || 'Subject not found'}
                 </div>
             </div>
@@ -92,80 +90,177 @@ export default function SubjectPage() {
 
     const isStarted = progress && progress.percent_complete > 0;
     const isCompleted = progress && progress.percent_complete === 100;
+    const pct = progress?.percent_complete ?? 0;
+
+    const btnLabel = isCompleted ? '🎉 Review Course' : isStarted ? '▶ Continue Learning' : 'Start Course →';
 
     return (
-        <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] animate-fade-in pb-20 pt-24">
-            {/* Premium Subject Hero Banner */}
-            <div className="relative w-full overflow-hidden bg-[#0a0a0e] border-y border-[var(--color-border)] mb-12">
-                <div className="absolute inset-0 opacity-30">
-                    <div className="absolute top-[-20%] right-[10%] w-[40%] h-[150%] bg-[var(--color-accent)] blur-[100px] rounded-full mix-blend-screen opacity-50 transform rotate-12"></div>
-                </div>
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.15] mix-blend-overlay"></div>
+        <div style={{ minHeight: '100vh', background: 'transparent', paddingBottom: '80px' }}>
 
-                <div className="relative z-10 max-w-[1000px] mx-auto px-6 md:px-12 py-16 md:py-24">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-6">
-                        <span className="text-white/80 text-xs font-bold tracking-widest uppercase">Course Overview</span>
+            {/* ── Hero Banner ── */}
+            <div style={{
+                position: 'relative',
+                background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f172a 100%)',
+                overflow: 'hidden',
+                padding: '48px 48px 52px',
+            }}>
+                {/* Orbs */}
+                <div style={{ position: 'absolute', top: '-30%', right: '5%', width: '45%', height: '200%', background: '#f97316', borderRadius: '50%', filter: 'blur(120px)', opacity: 0.08, pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', bottom: '-40%', left: '-5%', width: '40%', height: '200%', background: '#818cf8', borderRadius: '50%', filter: 'blur(120px)', opacity: 0.1, pointerEvents: 'none' }} />
+                {/* Dot grid */}
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px)', backgroundSize: '28px 28px', pointerEvents: 'none' }} />
+
+                <div style={{ position: 'relative', zIndex: 1, maxWidth: '960px' }}>
+                    {/* Badge */}
+                    <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '8px',
+                        background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
+                        borderRadius: '99px', padding: '5px 16px', marginBottom: '20px',
+                    }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20" />
+                        </svg>
+                        <span style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.6)' }}>Course Overview</span>
                     </div>
-                    <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-6 drop-shadow-md">{subject.title}</h1>
-                    <p className="text-lg md:text-xl text-[var(--color-text-secondary)] leading-relaxed max-w-3xl font-light">
+
+                    {/* Title */}
+                    <h1 style={{
+                        fontSize: 'clamp(28px, 5vw, 52px)',
+                        fontWeight: 900,
+                        color: 'white',
+                        letterSpacing: '-1px',
+                        lineHeight: 1.1,
+                        margin: '0 0 16px',
+                    }}>
+                        {subject.title}
+                    </h1>
+
+                    {/* Description */}
+                    <p style={{
+                        fontSize: '17px',
+                        color: 'rgba(255,255,255,0.6)',
+                        lineHeight: 1.7,
+                        margin: 0,
+                        maxWidth: '680px',
+                    }}>
                         {subject.description || 'No description provided for this course.'}
                     </p>
                 </div>
             </div>
 
-            <div className="max-w-[1000px] mx-auto px-6 md:px-12">
-                {progress && progress.total_videos > 0 && (
-                    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl p-8 md:p-10 mb-8 max-w-3xl shadow-lg relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-accent)]/5 to-transparent opacity-50 pointer-events-none"></div>
+            {/* ── Content ── */}
+            <div style={{ maxWidth: '960px', margin: '0 auto', padding: '40px 32px 0' }}>
 
-                        <div className="relative z-10">
-                            <div className="flex justify-between items-end mb-6">
-                                <div>
-                                    <h2 className="text-2xl font-bold mb-2">Your Progress</h2>
-                                    <p className="text-[var(--color-text-secondary)] font-medium">
-                                        <span className="text-[var(--color-text)] font-bold">{progress.completed_videos}</span> of {progress.total_videos} lessons completed
-                                    </p>
-                                </div>
-                                <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[var(--color-accent)] to-[#a855f7]">
-                                    {progress.percent_complete}%
-                                </div>
+                {/* Progress Card */}
+                {progress && progress.total_videos > 0 ? (
+                    <div style={{
+                        background: 'rgba(255,251,245,0.85)',
+                        backdropFilter: 'blur(12px)',
+                        border: '1.5px solid #f3f4f6',
+                        borderRadius: '24px',
+                        padding: '36px',
+                        boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                    }}>
+                        {/* Subtle tinted corner */}
+                        <div style={{ position: 'absolute', top: 0, right: 0, width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(249,115,22,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+                        {/* Header row */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', gap: '16px', flexWrap: 'wrap' }}>
+                            <div>
+                                <h2 style={{ fontSize: '22px', fontWeight: 900, color: '#111827', margin: '0 0 6px', letterSpacing: '-0.3px' }}>Your Progress</h2>
+                                <p style={{ fontSize: '15px', color: '#6b7280', margin: 0 }}>
+                                    <strong style={{ color: '#111827' }}>{progress.completed_videos}</strong> of <strong style={{ color: '#111827' }}>{progress.total_videos}</strong> lessons completed
+                                </p>
                             </div>
 
-                            <div className="w-full bg-[var(--color-bg)] h-4 rounded-full overflow-hidden border border-[var(--color-border)] shadow-inner mb-10 flex">
-                                <div
-                                    className="bg-gradient-to-r from-[var(--color-accent)] to-[#a855f7] h-full transition-all duration-1000 ease-out rounded-full relative"
-                                    style={{ width: `${progress.percent_complete}%` }}
-                                >
-                                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-white/30 rounded-full"></div>
-                                </div>
+                            {/* Big % badge */}
+                            <div style={{
+                                padding: '10px 20px', borderRadius: '16px',
+                                background: pct === 100 ? 'linear-gradient(135deg,#22c55e,#10b981)' : 'linear-gradient(135deg,#f97316,#ec4899)',
+                                boxShadow: pct === 100 ? '0 8px 24px rgba(34,197,94,0.3)' : '0 8px 24px rgba(249,115,22,0.3)',
+                                textAlign: 'center',
+                            }}>
+                                <div style={{ fontSize: '28px', fontWeight: 900, color: 'white', lineHeight: 1 }}>{pct}%</div>
+                                <div style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: '0.08em', marginTop: '3px' }}>Complete</div>
                             </div>
-
-                            <button
-                                onClick={handleStartContinue}
-                                className="group/btn relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-[var(--color-text)] text-[var(--color-surface)] hover:bg-[var(--color-text-secondary)] rounded-full font-bold text-lg transition-all hover:scale-105 shadow-xl w-full sm:w-auto"
-                            >
-                                {isCompleted ? 'Review Course' : isStarted ? 'Continue Learning' : 'Start Course'}
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover/btn:translate-x-1 transition-transform">
-                                    <path d="M5 12h14"></path>
-                                    <path d="m12 5 7 7-7 7"></path>
-                                </svg>
-                            </button>
                         </div>
+
+                        {/* Progress bar */}
+                        <div style={{ background: '#f3f4f6', borderRadius: '99px', height: '12px', overflow: 'hidden', marginBottom: '32px' }}>
+                            <div style={{
+                                height: '100%',
+                                borderRadius: '99px',
+                                background: pct === 100
+                                    ? 'linear-gradient(90deg,#22c55e,#10b981)'
+                                    : 'linear-gradient(90deg,#f97316,#ec4899)',
+                                width: `${Math.max(pct, 2)}%`,
+                                boxShadow: pct === 100 ? '0 0 12px rgba(34,197,94,0.4)' : '0 0 12px rgba(249,115,22,0.4)',
+                                transition: 'width 1.2s ease',
+                                position: 'relative',
+                            }}>
+                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '5px', background: 'rgba(255,255,255,0.35)', borderRadius: '99px' }} />
+                            </div>
+                        </div>
+
+                        {/* Stats row */}
+                        <div style={{ display: 'flex', gap: '16px', marginBottom: '32px', flexWrap: 'wrap' }}>
+                            {[
+                                { icon: '✅', label: 'Completed', value: progress.completed_videos },
+                                { icon: '📚', label: 'Remaining', value: progress.total_videos - progress.completed_videos },
+                                { icon: '🎥', label: 'Total Lessons', value: progress.total_videos },
+                            ].map(stat => (
+                                <div key={stat.label} style={{
+                                    flex: 1, minWidth: '100px',
+                                    background: '#f9fafb', border: '1px solid #f3f4f6',
+                                    borderRadius: '16px', padding: '16px 20px',
+                                    textAlign: 'center',
+                                }}>
+                                    <div style={{ fontSize: '20px', marginBottom: '4px' }}>{stat.icon}</div>
+                                    <div style={{ fontSize: '22px', fontWeight: 900, color: '#111827', lineHeight: 1 }}>{stat.value}</div>
+                                    <div style={{ fontSize: '12px', color: '#9ca3af', fontWeight: 600, marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{stat.label}</div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* CTA Button */}
+                        <button
+                            onClick={handleStartContinue}
+                            style={{
+                                width: '100%',
+                                padding: '18px 32px',
+                                borderRadius: '16px',
+                                border: 'none',
+                                background: pct === 100
+                                    ? 'linear-gradient(135deg,#22c55e,#10b981)'
+                                    : 'linear-gradient(135deg,#0f172a,#1e293b)',
+                                color: 'white',
+                                fontSize: '17px',
+                                fontWeight: 800,
+                                cursor: 'pointer',
+                                boxShadow: pct === 100
+                                    ? '0 8px 30px rgba(34,197,94,0.35)'
+                                    : '0 8px 30px rgba(0,0,0,0.25)',
+                                letterSpacing: '-0.2px',
+                                transition: 'all 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '10px',
+                            }}
+                            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '0.9'; (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'; }}
+                            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.opacity = '1'; (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'; }}
+                        >
+                            {btnLabel}
+                        </button>
                     </div>
-                )}
-
-                {(!progress || progress.total_videos === 0) && (
-                    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl p-12 text-center max-w-3xl shadow-sm">
-                        <div className="w-16 h-16 bg-[var(--color-surface-hover)] rounded-full flex items-center justify-center mx-auto mb-6 text-[var(--color-text-muted)]">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-                                <line x1="16" x2="16" y1="2" y2="6" />
-                                <line x1="8" x2="8" y1="2" y2="6" />
-                                <line x1="3" x2="21" y1="10" y2="10" />
-                            </svg>
-                        </div>
-                        <h3 className="text-xl font-bold mb-3">Content Coming Soon</h3>
-                        <p className="text-[var(--color-text-secondary)] mb-2">Videos are currently being added to this course.</p>
+                ) : (
+                    /* No videos yet */
+                    <div style={{ background: 'rgba(255,251,245,0.85)', backdropFilter: 'blur(10px)', border: '1px solid rgba(249,115,22,0.1)', borderRadius: '24px', padding: '56px 40px', textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
+                        <div style={{ fontSize: '48px', marginBottom: '16px' }}>🚧</div>
+                        <h3 style={{ fontSize: '20px', fontWeight: 800, color: '#111827', marginBottom: '8px' }}>Content Coming Soon</h3>
+                        <p style={{ color: '#6b7280', fontSize: '15px', margin: 0 }}>Videos are currently being added to this course. Check back soon!</p>
                     </div>
                 )}
             </div>

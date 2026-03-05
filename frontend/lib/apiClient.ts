@@ -76,7 +76,7 @@ export async function apiClient<T = unknown>(
             // Refresh failed — clear auth and redirect
             accessToken = null;
             if (typeof window !== 'undefined') {
-                window.location.href = '/auth/login';
+                window.location.href = '/login';
             }
             throw new Error('Session expired. Please log in again.');
         }

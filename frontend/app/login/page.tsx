@@ -19,7 +19,7 @@ export default function LoginPage() {
 
         try {
             await loginUser(email, password);
-            router.push('/');
+            router.push('/profile');
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Login failed';
             setError(message);

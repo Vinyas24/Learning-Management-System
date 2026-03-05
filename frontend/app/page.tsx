@@ -13,9 +13,7 @@ interface Subject {
 
 interface SubjectsResponse {
   data: Subject[];
-  pagination: {
-    total: number;
-  };
+  pagination: { total: number };
 }
 
 export default function Home() {
@@ -24,96 +22,179 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchSubjects = async () => {
+    (async () => {
       try {
         const res = await apiClient<SubjectsResponse>('/api/subjects');
         setSubjects(res.data);
-      } catch (err) {
-        setError('Failed to load subjects. Ensure backend is running.');
+      } catch {
+        setError('Failed to load subjects. Ensure the backend is running.');
       } finally {
         setLoading(false);
       }
-    };
-
-    fetchSubjects();
+    })();
   }, []);
 
   return (
-    <div className="min-h-screen bg-[var(--color-bg)] animate-fade-in pb-20 pt-24">
+    <div style={{ background: 'transparent', minHeight: '100vh', fontFamily: 'inherit' }}>
 
-      {/* Premium Hero Banner */}
-      <div className="relative w-full overflow-hidden border-b border-[var(--color-border)] bg-[#0a0a0e]">
-        {/* Abstract Glowing Backgrounds */}
-        <div className="absolute inset-0 opacity-40">
-          <div className="absolute top-[-30%] right-[-10%] w-[60%] h-[160%] bg-[var(--color-accent)] blur-[150px] rounded-full mix-blend-screen mix-blend-plus-lighter opacity-40 transform -rotate-12 animate-pulse" style={{ animationDuration: '8s' }}></div>
-          <div className="absolute bottom-[-30%] left-[-10%] w-[50%] h-[150%] bg-[#a855f7] blur-[150px] rounded-full mix-blend-screen mix-blend-plus-lighter opacity-30 transform rotate-12"></div>
-        </div>
-        {/* Textures and grid */}
-        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.15] mix-blend-overlay"></div>
-        <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(var(--color-border) 1px, transparent 1px)', backgroundSize: '48px 48px', opacity: 0.1 }}></div>
+      {/* Background is provided globally by layout.tsx */}
 
-        {/* Hero Content */}
-        <div className="relative z-10 max-w-[1200px] mx-auto px-6 md:px-12 py-20 md:py-32 flex flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-8">
-            <span className="w-2 h-2 rounded-full bg-[var(--color-accent)] flex-shrink-0"></span>
-            <span className="text-white/80 text-xs font-bold tracking-widest uppercase">Premium Learning Paths</span>
+      {/* ══════════ HERO ══════════ */}
+      <section style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '80px 40px 100px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          gap: '32px',
+        }}>
+
+          {/* Badge */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '10px',
+            background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(16px)',
+            border: '1px solid #000000ff', borderRadius: '99px',
+            padding: '8px 20px',
+            boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+          }}>
+            <span style={{
+              width: '10px', height: '10px', borderRadius: '50%',
+              background: '#f97316', display: 'inline-block',
+              boxShadow: '0 0 10px rgba(249,115,22,0.6)',
+            }} />
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#374151', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Trusted by +50k Students Worldwide
+            </span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black tracking-tight text-white mb-6 leading-tight drop-shadow-md">
-            Master your craft with <br className="hidden md:block" />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-400 to-[#a855f7]">structured curriculums</span>
+          {/* Headline */}
+          <h1 style={{
+            fontSize: 'clamp(40px, 7vw, 80px)',
+            fontWeight: 900,
+            color: '#111827',
+            lineHeight: 1.08,
+            letterSpacing: '-2px',
+            margin: 0,
+            maxWidth: '900px',
+          }}>
+            Learn Anything,{' '}
+            <br />
+            Anywhere{' '}
+            <span style={{
+              background: 'linear-gradient(135deg, #f97316, #ec4899)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}>
+              Easily
+            </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-[var(--color-text-secondary)] max-w-2xl mx-auto mb-10 leading-relaxed font-light">
-            Explore expertly researched video courses designed to guide you step-by-step from foundational concepts to advanced techniques.
+          {/* Subtitle */}
+          <p style={{
+            fontSize: 'clamp(16px, 2vw, 20px)',
+            color: '#6b7280',
+            lineHeight: 1.7,
+            maxWidth: '680px',
+            margin: 0,
+          }}>
+            Access high-quality lessons and interactive resources from top educators, empowering you to achieve your learning goals at your own pace.
           </p>
 
-          <div className="flex items-center justify-center gap-4">
-            <a href="#courses" className="px-8 py-4 rounded-full bg-gradient-to-r from-[var(--color-accent)] to-[#a855f7] text-white font-bold text-lg shadow-lg shadow-indigo-500/25 hover:scale-105 hover:shadow-indigo-500/40 transition-all">
-              Start Exploring
+          {/* CTAs */}
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            <a href="#courses" style={{
+              padding: '16px 36px', borderRadius: '99px',
+              background: '#111827', color: 'white',
+              fontSize: '17px', fontWeight: 700, textDecoration: 'none',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.2)',
+              transition: 'all 0.2s',
+              display: 'inline-block',
+            }}>
+              Join Free Course →
             </a>
-            <a href="/profile" className="px-8 py-4 rounded-full bg-white/5 border border-white/10 text-white font-bold text-lg hover:bg-white/10 backdrop-blur-sm transition-all">
-              My Profile
-            </a>
+          </div>
+
+          {/* Social proof */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '16px',
+            background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(0, 0, 0, 0.9)',
+            borderRadius: '99px', padding: '8px 28px 8px 8px',
+            boxShadow: '0 8px 30px rgba(0,0,0,0.07)',
+          }}>
+            <div style={{ display: 'flex', marginLeft: '4px' }}>
+              {[
+                { bg: '#dbeafe', emoji: '👱' },
+                { bg: '#fce7f3', emoji: '👩' },
+                { bg: '#dcfce7', emoji: '🧔' },
+              ].map((a, i) => (
+                <div key={i} style={{
+                  width: '44px', height: '44px', borderRadius: '50%',
+                  background: a.bg, border: '3px solid white',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '20px', marginLeft: i === 0 ? 0 : '-12px',
+                  zIndex: 3 - i, position: 'relative', boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                }}>
+                  {a.emoji}
+                </div>
+              ))}
+            </div>
+            <span style={{ fontSize: '15px', fontWeight: 700, color: '#111827', whiteSpace: 'nowrap' }}>
+              Join <strong>100k+</strong> Developers &nbsp;·&nbsp;{' '}
+              <span style={{ color: '#f97316', cursor: 'pointer' }}>Start Your Coding Journey →</span>
+            </span>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Course Grid Section */}
-      <div id="courses" className="max-w-[1200px] mx-auto px-6 md:px-12 mt-20 pt-10">
-        <div className="flex items-center justify-between mb-12">
-          <div>
-            <h2 className="text-3xl font-black tracking-tight flex items-center gap-3 mb-2">
-              <span className="w-1.5 h-8 bg-[var(--color-accent)] rounded-full inline-block"></span>
-              Available Courses
-            </h2>
-            <p className="text-[var(--color-text-secondary)]">Begin your journey by selecting a learning path below.</p>
+      {/* ══════════ COURSES ══════════ */}
+      <section id="courses" style={{ position: 'relative', zIndex: 1 }}>
+        <div style={{
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '0 40px 100px',
+        }}>
+          {/* Divider */}
+          <div style={{ borderTop: '1px solid #000000ff', paddingTop: '64px', marginBottom: '48px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+              <div style={{ width: '6px', height: '44px', background: 'linear-gradient(180deg, #f97316, #ec4899)', borderRadius: '99px', flexShrink: 0 }} />
+              <h2 style={{ fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 900, color: '#111827', margin: 0, letterSpacing: '-1px' }}>
+                Available Courses
+              </h2>
+            </div>
+            <p style={{ fontSize: '17px', color: '#6b7280', margin: 0, paddingLeft: '22px' }}>
+              Select a learning path below. Login is required to unlock video content.
+            </p>
           </div>
+
+          {/* Grid */}
+          {loading ? (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '28px' }}>
+              {[1, 2, 3].map(i => (
+                <div key={i} style={{ background: '#f9fafb', borderRadius: '24px', height: '300px', border: '1px solid #000000ff' }} />
+              ))}
+            </div>
+          ) : error ? (
+            <div style={{ background: '#fff1f2', color: '#e11d48', padding: '32px', borderRadius: '20px', border: '1px solid #000000ff' }}>
+              <strong style={{ display: 'block', fontSize: '18px', marginBottom: '8px' }}>Could not load subjects</strong>
+              <span style={{ fontSize: '15px', opacity: 0.9 }}>{error}</span>
+            </div>
+          ) : subjects.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '80px 40px', background: 'white', borderRadius: '24px', border: '1px solid #f3f4f6' }}>
+              <p style={{ fontSize: '18px', color: '#6b7280', margin: 0 }}>No subjects published yet. Check back soon!</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '28px' }}>
+              {subjects.map(subject => (
+                <SubjectCard key={subject.id} {...subject} />
+              ))}
+            </div>
+          )}
         </div>
-
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-pulse">
-            {[1, 2, 3].map(i => (
-              <div key={i} className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl h-80 opacity-60"></div>
-            ))}
-          </div>
-        ) : error ? (
-          <div className="bg-[var(--color-error-light)] text-[var(--color-error)] p-6 rounded-2xl border border-[rgba(239,68,68,0.2)] shadow-sm max-w-2xl">
-            <div className="font-semibold mb-1">Could not load subjects</div>
-            <div className="text-sm opacity-90">{error}</div>
-          </div>
-        ) : subjects.length === 0 ? (
-          <div className="text-center py-20 text-[var(--color-text-secondary)] bg-[var(--color-surface)] rounded-3xl border border-[var(--color-border)] shadow-sm">
-            <p className="text-lg">No subjects are currently published. Check back later!</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {subjects.map((subject) => (
-              <SubjectCard key={subject.id} {...subject} />
-            ))}
-          </div>
-        )}
-      </div>
+      </section>
     </div>
   );
 }
