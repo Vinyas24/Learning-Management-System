@@ -28,7 +28,9 @@ export default function Header() {
                 <nav className="header-nav">
                     {isAuthenticated ? (
                         <>
-                            <span className="header-user">{user?.name}</span>
+                            <Link href="/profile" className="header-user hover:text-[var(--color-accent)] transition-colors">
+                                {user?.name}
+                            </Link>
                             <button onClick={handleLogout} className="btn btn-ghost">
                                 Logout
                             </button>
