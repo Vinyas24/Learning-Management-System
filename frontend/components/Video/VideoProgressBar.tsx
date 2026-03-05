@@ -16,8 +16,8 @@ export default function VideoProgressBar() {
     };
 
     return (
-        <div className="video-progress-container mb-6">
-            <div className="flex justify-between text-xs text-[var(--color-text-secondary)] mb-2 font-mono">
+        <div className="video-progress-container mb-8">
+            <div className="flex justify-between text-xs text-[var(--color-text-secondary)] mb-2 font-mono tracking-wider">
                 <span>{formatTime(currentTime)}</span>
                 <span>{duration > 0 ? formatTime(duration) : '--:--'}</span>
             </div>

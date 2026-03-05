@@ -94,53 +94,81 @@ export default function SubjectPage() {
     const isCompleted = progress && progress.percent_complete === 100;
 
     return (
-        <div className="p-6 md:p-8 max-w-4xl">
-            <header className="mb-10">
-                <h1 className="text-4xl font-bold tracking-tight mb-4">{subject.title}</h1>
-                <p className="text-[var(--color-text-secondary)] text-lg leading-relaxed whitespace-pre-wrap">
-                    {subject.description || 'No description provided.'}
-                </p>
-            </header>
+        <div className="min-h-screen bg-[var(--color-bg)] text-[var(--color-text)] animate-fade-in pb-20 pt-24">
+            {/* Premium Subject Hero Banner */}
+            <div className="relative w-full overflow-hidden bg-[#0a0a0e] border-y border-[var(--color-border)] mb-12">
+                <div className="absolute inset-0 opacity-30">
+                    <div className="absolute top-[-20%] right-[10%] w-[40%] h-[150%] bg-[var(--color-accent)] blur-[100px] rounded-full mix-blend-screen opacity-50 transform rotate-12"></div>
+                </div>
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.15] mix-blend-overlay"></div>
 
-            {progress && progress.total_videos > 0 && (
-                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-6 mb-8 max-w-2xl">
-                    <div className="flex justify-between items-end mb-4">
-                        <div>
-                            <h2 className="text-lg font-semibold mb-1">Your Progress</h2>
-                            <p className="text-[var(--color-text-secondary)] text-sm">
-                                {progress.completed_videos} of {progress.total_videos} lessons completed
-                            </p>
-                        </div>
-                        <div className="text-2xl font-bold text-[var(--color-accent)]">
-                            {progress.percent_complete}%
+                <div className="relative z-10 max-w-[1000px] mx-auto px-6 md:px-12 py-16 md:py-24">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-6">
+                        <span className="text-white/80 text-xs font-bold tracking-widest uppercase">Course Overview</span>
+                    </div>
+                    <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-6 drop-shadow-md">{subject.title}</h1>
+                    <p className="text-lg md:text-xl text-[var(--color-text-secondary)] leading-relaxed max-w-3xl font-light">
+                        {subject.description || 'No description provided for this course.'}
+                    </p>
+                </div>
+            </div>
+
+            <div className="max-w-[1000px] mx-auto px-6 md:px-12">
+                {progress && progress.total_videos > 0 && (
+                    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl p-8 md:p-10 mb-8 max-w-3xl shadow-lg relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-accent)]/5 to-transparent opacity-50 pointer-events-none"></div>
+
+                        <div className="relative z-10">
+                            <div className="flex justify-between items-end mb-6">
+                                <div>
+                                    <h2 className="text-2xl font-bold mb-2">Your Progress</h2>
+                                    <p className="text-[var(--color-text-secondary)] font-medium">
+                                        <span className="text-[var(--color-text)] font-bold">{progress.completed_videos}</span> of {progress.total_videos} lessons completed
+                                    </p>
+                                </div>
+                                <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-[var(--color-accent)] to-[#a855f7]">
+                                    {progress.percent_complete}%
+                                </div>
+                            </div>
+
+                            <div className="w-full bg-[var(--color-bg)] h-4 rounded-full overflow-hidden border border-[var(--color-border)] shadow-inner mb-10 flex">
+                                <div
+                                    className="bg-gradient-to-r from-[var(--color-accent)] to-[#a855f7] h-full transition-all duration-1000 ease-out rounded-full relative"
+                                    style={{ width: `${progress.percent_complete}%` }}
+                                >
+                                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-white/30 rounded-full"></div>
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={handleStartContinue}
+                                className="group/btn relative inline-flex items-center justify-center gap-2 px-8 py-4 bg-[var(--color-text)] text-[var(--color-surface)] hover:bg-[var(--color-text-secondary)] rounded-full font-bold text-lg transition-all hover:scale-105 shadow-xl w-full sm:w-auto"
+                            >
+                                {isCompleted ? 'Review Course' : isStarted ? 'Continue Learning' : 'Start Course'}
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover/btn:translate-x-1 transition-transform">
+                                    <path d="M5 12h14"></path>
+                                    <path d="m12 5 7 7-7 7"></path>
+                                </svg>
+                            </button>
                         </div>
                     </div>
+                )}
 
-                    <div className="w-full bg-[var(--color-border)] h-3 rounded-full overflow-hidden mb-8">
-                        <div
-                            className="bg-[var(--color-accent)] h-full transition-all duration-500 ease-out rounded-full"
-                            style={{ width: `${progress.percent_complete}%` }}
-                        />
+                {(!progress || progress.total_videos === 0) && (
+                    <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-3xl p-12 text-center max-w-3xl shadow-sm">
+                        <div className="w-16 h-16 bg-[var(--color-surface-hover)] rounded-full flex items-center justify-center mx-auto mb-6 text-[var(--color-text-muted)]">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+                                <line x1="16" x2="16" y1="2" y2="6" />
+                                <line x1="8" x2="8" y1="2" y2="6" />
+                                <line x1="3" x2="21" y1="10" y2="10" />
+                            </svg>
+                        </div>
+                        <h3 className="text-xl font-bold mb-3">Content Coming Soon</h3>
+                        <p className="text-[var(--color-text-secondary)] mb-2">Videos are currently being added to this course.</p>
                     </div>
-
-                    <button
-                        onClick={handleStartContinue}
-                        className="btn btn-primary px-6 py-2.5 shadow-md shadow-indigo-500/20"
-                    >
-                        {isCompleted ? 'Review Course' : isStarted ? 'Continue Learning' : 'Start Course'}
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-1">
-                            <path d="M5 12h14"></path>
-                            <path d="m12 5 7 7-7 7"></path>
-                        </svg>
-                    </button>
-                </div>
-            )}
-
-            {(!progress || progress.total_videos === 0) && (
-                <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl p-8 text-center max-w-2xl">
-                    <p className="text-[var(--color-text-secondary)] mb-4">This course is coming soon. Videos are currently being added.</p>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }

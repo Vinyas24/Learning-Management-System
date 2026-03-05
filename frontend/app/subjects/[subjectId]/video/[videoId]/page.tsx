@@ -129,7 +129,7 @@ export default function VideoPage() {
     }
 
     return (
-        <div className="p-4 md:p-6 md:py-8 max-w-5xl mx-auto animate-fade-in">
+        <div className="p-4 md:p-6 md:pb-12 pt-24 max-w-[1200px] mx-auto animate-fade-in">
             {/* Video Player Section */}
             <div className="bg-[var(--color-surface)] rounded-xl border border-[var(--color-border)] overflow-hidden shadow-sm mb-6">
                 <div className="aspect-video w-full bg-black relative">
