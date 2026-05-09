@@ -3,6 +3,7 @@ import { jwtConfig } from '../config/security';
 
 interface AccessTokenPayload {
     userId: number;
+    role: string;
 }
 
 interface RefreshTokenPayload {
@@ -15,9 +16,9 @@ const ACCESS_TOKEN_EXPIRY_SECONDS = 15 * 60;
 // Refresh token: 30 days in seconds
 const REFRESH_TOKEN_EXPIRY_SECONDS = jwtConfig.refreshExpiryDays * 24 * 60 * 60;
 
-export const signAccessToken = (userId: number): string => {
+export const signAccessToken = (userId: number, role: string): string => {
     const options: SignOptions = { expiresIn: ACCESS_TOKEN_EXPIRY_SECONDS };
-    return jwt.sign({ userId }, jwtConfig.accessSecret, options);
+    return jwt.sign({ userId, role }, jwtConfig.accessSecret, options);
 };
 
 export const signRefreshToken = (userId: number, tokenId: string): string => {

@@ -12,7 +12,7 @@ const hashToken = (token: string): string => {
 };
 
 interface AuthResult {
-    user: { id: number; name: string; email: string };
+    user: { id: number; name: string; email: string; role: string };
     accessToken: string;
     refreshToken: string;
 }
@@ -39,7 +39,8 @@ export const register = async (
 
     // Issue tokens
     const tokenId = uuidv4();
-    const accessToken = signAccessToken(userId);
+    const role = 'student';
+    const accessToken = signAccessToken(userId, role);
     const refreshToken = signRefreshToken(userId, tokenId);
 
     // Store refresh token hash in DB
@@ -53,7 +54,7 @@ export const register = async (
     });
 
     return {
-        user: { id: userId, name, email },
+        user: { id: userId, name, email, role },
         accessToken,
         refreshToken,
     };
@@ -75,7 +76,7 @@ export const login = async (
     }
 
     const tokenId = uuidv4();
-    const accessToken = signAccessToken(user.id);
+    const accessToken = signAccessToken(user.id, user.role);
     const refreshToken = signRefreshToken(user.id, tokenId);
 
     const expiresAt = new Date();
@@ -88,7 +89,7 @@ export const login = async (
     });
 
     return {
-        user: { id: user.id, name: user.name, email: user.email },
+        user: { id: user.id, name: user.name, email: user.email, role: user.role },
         accessToken,
         refreshToken,
     };
@@ -117,7 +118,10 @@ export const refresh = async (
         throw createApiError('Refresh token is revoked or expired', 401);
     }
 
-    const accessToken = signAccessToken(payload.userId);
+    const userRow = await db('users').where({ id: payload.userId }).first();
+    if (!userRow) throw createApiError('User not found', 404);
+
+    const accessToken = signAccessToken(payload.userId, userRow.role);
     return { accessToken };
 };
 

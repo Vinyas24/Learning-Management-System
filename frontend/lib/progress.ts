@@ -1,6 +1,5 @@
 import { apiClient } from './apiClient';
 
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 const DEBOUNCE_MS = 5000;
 
 interface ProgressPayload {
@@ -8,17 +7,12 @@ interface ProgressPayload {
     is_completed?: boolean;
 }
 
-/**
- * Send progress update, debounced to avoid excessive API calls.
- * Completion events bypass the debounce and send immediately.
- */
+let isThrottled = false;
+let pendingPayload: ProgressPayload | null = null;
+let pendingVideoId: number | null = null;
+
 export function sendProgress(videoId: number, payload: ProgressPayload): void {
     if (payload.is_completed) {
-        // Completion is sent immediately
-        if (debounceTimer) {
-            clearTimeout(debounceTimer);
-            debounceTimer = null;
-        }
         apiClient(`/api/progress/videos/${videoId}`, {
             method: 'POST',
             body: JSON.stringify(payload),
@@ -26,26 +20,40 @@ export function sendProgress(videoId: number, payload: ProgressPayload): void {
         return;
     }
 
-    // Debounced position update
-    if (debounceTimer) {
-        clearTimeout(debounceTimer);
-    }
+    pendingPayload = payload;
+    pendingVideoId = videoId;
 
-    debounceTimer = setTimeout(() => {
-        apiClient(`/api/progress/videos/${videoId}`, {
-            method: 'POST',
-            body: JSON.stringify(payload),
-        }).catch(console.error);
-        debounceTimer = null;
-    }, DEBOUNCE_MS);
+    if (!isThrottled) {
+        isThrottled = true;
+        setTimeout(() => {
+            if (pendingPayload && pendingVideoId) {
+                apiClient(`/api/progress/videos/${pendingVideoId}`, {
+                    method: 'POST',
+                    body: JSON.stringify(pendingPayload),
+                }).catch(console.error);
+                pendingPayload = null;
+                pendingVideoId = null;
+            }
+            isThrottled = false;
+        }, DEBOUNCE_MS);
+    }
 }
 
-/**
- * Flush any pending debounced progress update immediately.
- */
 export function flushProgress(): void {
-    if (debounceTimer) {
-        clearTimeout(debounceTimer);
-        debounceTimer = null;
+    if (pendingPayload && pendingVideoId) {
+        apiClient(`/api/progress/videos/${pendingVideoId}`, {
+            method: 'POST',
+            body: JSON.stringify(pendingPayload),
+        }).catch(console.error);
+        pendingPayload = null;
+        pendingVideoId = null;
     }
+}
+
+export async function getGlobalResume() {
+    const response = await apiClient<{
+        success: boolean;
+        data: { video_id: number; subject_id: number; last_position_seconds: number } | null;
+    }>('/api/progress/resume');
+    return response.data;
 }

@@ -21,6 +21,7 @@ interface SubjectTreeResponse {
                 is_completed: boolean;
                 locked: boolean;
             }[];
+            quiz?: { id: number; passed: boolean } | null;
         }[];
     };
 }
@@ -31,6 +32,9 @@ export default function SubjectSidebar() {
     const subjectId = Number(params.subjectId);
     const activeVideoId = pathname.includes('/video/')
         ? Number(pathname.split('/video/')[1])
+        : undefined;
+    const activeQuizSectionId = pathname.includes('/quiz/')
+        ? Number(pathname.split('/quiz/')[1])
         : undefined;
 
     const { tree, loading, error, setTree, setLoading, setError } = useSidebarStore();
@@ -85,6 +89,8 @@ export default function SubjectSidebar() {
                     videos={section.videos}
                     subjectId={subjectId}
                     activeVideoId={activeVideoId}
+                    activeQuizSectionId={activeQuizSectionId}
+                    quiz={section.quiz}
                 />
             ))}
         </aside>

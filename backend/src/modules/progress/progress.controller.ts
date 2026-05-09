@@ -78,3 +78,17 @@ export const updateVideoProgress = async (
         next(error);
     }
 };
+
+// ── GET /api/progress/resume (auth) ──────────────────────────────────
+export const getGlobalResume = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> => {
+    try {
+        const resumeData = await progressService.getGlobalResume(req.user!.id);
+        res.json({ success: true, data: resumeData });
+    } catch (error) {
+        next(error);
+    }
+};

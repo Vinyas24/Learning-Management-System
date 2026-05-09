@@ -110,3 +110,28 @@ export const getSubjectProgress = async (
         last_position_seconds: lastProgress?.last_position_seconds || null,
     };
 };
+
+// ── Get global resume video ──────────────────────────────────────────
+export const getGlobalResume = async (userId: number) => {
+    const lastProgress = await db('video_progress')
+        .where('user_id', userId)
+        .andWhere('is_completed', false)
+        .orderBy('updated_at', 'desc')
+        .first();
+
+    if (!lastProgress) return null;
+
+    const videoData = await db('videos')
+        .join('sections', 'videos.section_id', 'sections.id')
+        .where('videos.id', lastProgress.video_id)
+        .select('videos.id as video_id', 'sections.subject_id as subject_id')
+        .first();
+
+    if (!videoData) return null;
+
+    return {
+        video_id: videoData.video_id,
+        subject_id: videoData.subject_id,
+        last_position_seconds: lastProgress.last_position_seconds,
+    };
+};

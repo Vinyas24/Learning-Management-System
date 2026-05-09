@@ -46,3 +46,8 @@ export const getSubjectProgress = async (userId: number, subjectId: number) => {
 
     return progressRepo.getSubjectProgress(userId, subjectId);
 };
+
+// ── Get global resume video ──────────────────────────────────────────
+export const getGlobalResume = async (userId: number) => {
+    return progressRepo.getGlobalResume(userId);
+};

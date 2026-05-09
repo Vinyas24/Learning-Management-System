@@ -6,17 +6,20 @@ import { useAuthStore } from '@/store/authStore';
 
 interface AuthGuardProps {
     children: React.ReactNode;
+    allowedRoles?: string[];
 }
 
-export default function AuthGuard({ children }: AuthGuardProps) {
-    const { isAuthenticated } = useAuthStore();
+export default function AuthGuard({ children, allowedRoles }: AuthGuardProps) {
+    const { isAuthenticated, user } = useAuthStore();
     const router = useRouter();
 
     useEffect(() => {
         if (!isAuthenticated) {
             router.push('/login');
+        } else if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+            router.push('/profile');
         }
-    }, [isAuthenticated, router]);
+    }, [isAuthenticated, user, allowedRoles, router]);
 
     if (!isAuthenticated) {
         return (
@@ -24,6 +27,10 @@ export default function AuthGuard({ children }: AuthGuardProps) {
                 <div className="h-8 w-8 animate-spin rounded-full border-2 border-[var(--color-accent)] border-t-transparent" />
             </div>
         );
+    }
+
+    if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+        return null;
     }
 
     return <>{children}</>;

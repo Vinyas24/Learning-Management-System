@@ -45,6 +45,25 @@ export const getSubjectTree = async (subjectId: number, userId: number) => {
         completionMap.set(row.video_id, row.is_completed);
     }
 
+    // Get quizzes and quiz results
+    const quizzes = sectionIds.length > 0 
+        ? await db('quizzes').whereIn('section_id', sectionIds).select('id', 'section_id')
+        : [];
+    
+    const quizIds = quizzes.map(q => q.id);
+    const quizResults = quizIds.length > 0
+        ? await db('quiz_results').whereIn('quiz_id', quizIds).andWhere('user_id', userId).select('quiz_id', 'passed')
+        : [];
+
+    const sectionQuizPassedMap = new Map<number, boolean>();
+    const sectionHasQuizMap = new Map<number, boolean>();
+
+    for (const quiz of quizzes) {
+        sectionHasQuizMap.set(quiz.section_id, true);
+        const result = quizResults.find(qr => qr.quiz_id === quiz.id);
+        sectionQuizPassedMap.set(quiz.section_id, result?.passed || false);
+    }
+
     // Build sections with videos for ordering
     const sectionsWithVideos = sections.map((section) => ({
         id: section.id,
@@ -67,7 +86,19 @@ export const getSubjectTree = async (subjectId: number, userId: number) => {
 
                 // Determine if locked: previous video in global order must be completed
                 const { prevId } = getPrevNextVideoIds(flatList, video.id);
-                const locked = prevId !== null && !completionMap.get(prevId);
+                let locked = prevId !== null && !completionMap.get(prevId);
+
+                // If cross-section boundary, check if previous section's quiz was passed
+                if (prevId !== null) {
+                    const prevVideo = videos.find(v => v.id === prevId);
+                    if (prevVideo && prevVideo.section_id !== video.section_id) {
+                        if (sectionHasQuizMap.get(prevVideo.section_id)) {
+                            if (!sectionQuizPassedMap.get(prevVideo.section_id)) {
+                                locked = true;
+                            }
+                        }
+                    }
+                }
 
                 return {
                     id: video.id,
@@ -79,11 +110,15 @@ export const getSubjectTree = async (subjectId: number, userId: number) => {
                 };
             });
 
+        const sectionQuiz = quizzes.find(q => q.section_id === section.id);
+        const isQuizPassed = sectionQuiz ? sectionQuizPassedMap.get(section.id) || false : false;
+
         return {
             id: section.id,
             title: section.title,
             order_index: section.order_index,
             videos: sectionVideos,
+            quiz: sectionQuiz ? { id: sectionQuiz.id, passed: isQuizPassed } : null,
         };
     });
 

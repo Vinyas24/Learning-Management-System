@@ -16,9 +16,11 @@ interface SectionItemProps {
     videos: VideoRef[];
     subjectId: number;
     activeVideoId?: number;
+    activeQuizSectionId?: number;
+    quiz?: { id: number; passed: boolean } | null;
 }
 
-export default function SectionItem({ title, videos, subjectId, activeVideoId }: SectionItemProps) {
+export default function SectionItem({ title, sectionId, videos, subjectId, activeVideoId, activeQuizSectionId, quiz }: SectionItemProps) {
     return (
         <div className="section-item">
             <h4 className="section-title">{title}</h4>
@@ -63,6 +65,31 @@ export default function SectionItem({ title, videos, subjectId, activeVideoId }:
                         </Link>
                     );
                 })}
+
+                {quiz && (
+                    <Link
+                        href={`/subjects/${subjectId}/quiz/${sectionId}`}
+                        className={`video-nav-item ${activeQuizSectionId === sectionId ? 'active' : ''}`}
+                    >
+                        <div className="nav-icon">
+                            {quiz.passed ? (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="nav-status-completed" style={{ color: '#22c55e' }} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                    <polyline points="22 4 12 14.01 9 11.01" />
+                                </svg>
+                            ) : (
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="nav-status-pending" style={{ color: '#f97316' }} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <polyline points="10 9 9 9 8 9"></polyline>
+                                </svg>
+                            )}
+                        </div>
+                        <span className="nav-title" style={{ fontWeight: 800 }}>{title} Quiz</span>
+                    </Link>
+                )}
             </div>
         </div>
     );

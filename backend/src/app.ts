@@ -11,6 +11,7 @@ import authRoutes from './modules/auth/auth.routes';
 import subjectRoutes from './modules/subjects/subject.routes';
 import videoRoutes from './modules/videos/video.routes';
 import progressRoutes from './modules/progress/progress.routes';
+import quizRoutes from './modules/quizzes/quiz.routes';
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/progress', progressRoutes);
+app.use('/api/quizzes', quizRoutes);
 
 // ── Error Handler (must be last) ────────────────────────────────
 app.use(errorHandler);

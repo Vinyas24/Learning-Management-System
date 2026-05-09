@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/authStore';
 import { apiClient } from '@/lib/apiClient';
+import { getGlobalResume } from '@/lib/progress';
 import AuthGuard from '@/components/Auth/AuthGuard';
 
 interface Subject {
@@ -34,6 +35,7 @@ const CARD_COLORS = [
 export default function ProfilePage() {
     const { user } = useAuthStore();
     const [enrolledSubjects, setEnrolledSubjects] = useState<EnrolledSubject[]>([]);
+    const [globalResume, setGlobalResume] = useState<{ video_id: number; subject_id: number } | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -55,7 +57,10 @@ export default function ProfilePage() {
                     .filter(r => r.progress && (r.progress.percent_complete > 0 || r.progress.last_video_id !== null))
                     .map(r => ({ ...r.subject, progress: r.progress! }));
 
+                const globalResumeRes = await getGlobalResume().catch(() => null);
+
                 setEnrolledSubjects(activeSubjects);
+                setGlobalResume(globalResumeRes);
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : 'Failed to load profile data';
                 setError(message);
@@ -131,6 +136,25 @@ export default function ProfilePage() {
                                 ))}
                             </div>
                         </div>
+
+                        {/* Global Resume Button */}
+                        {globalResume && (
+                            <div style={{ marginTop: '32px' }}>
+                                <Link href={`/subjects/${globalResume.subject_id}/video/${globalResume.video_id}`} style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: '12px',
+                                    padding: '16px 36px', borderRadius: '99px',
+                                    background: 'linear-gradient(135deg, #f97316, #ec4899)',
+                                    color: 'white', fontWeight: 800, fontSize: '16px',
+                                    textDecoration: 'none', boxShadow: '0 8px 30px rgba(249,115,22,0.4)',
+                                    transition: 'transform 0.2s'
+                                }}>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                        <polygon points="5 3 19 12 5 21 5 3" fill="currentColor" />
+                                    </svg>
+                                    Resume Learning
+                                </Link>
+                            </div>
+                        )}
                     </div>
                 </div>
 
