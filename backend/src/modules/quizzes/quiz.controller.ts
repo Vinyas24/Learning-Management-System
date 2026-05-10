@@ -4,7 +4,7 @@ import * as quizService from './quiz.service';
 export const createQuiz = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const { sectionId, title, passingScore } = req.body;
-        const quizId = await quizService.createQuiz(sectionId, title, passingScore || 50);
+        const quizId = await quizService.createQuiz(req.user!.id, req.user!.role, sectionId, title, passingScore || 50);
         res.status(201).json({ success: true, data: { quizId } });
     } catch (error) {
         next(error);
@@ -13,9 +13,9 @@ export const createQuiz = async (req: Request, res: Response, next: NextFunction
 
 export const createQuestion = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const quizId = parseInt(req.params.quizId);
+        const quizId = parseInt(req.params.quizId as string);
         const { questionText, options, correctAnswer, orderIndex } = req.body;
-        const questionId = await quizService.createQuestion(quizId, questionText, options, correctAnswer, orderIndex);
+        const questionId = await quizService.createQuestion(req.user!.id, req.user!.role, quizId, questionText, options, correctAnswer, orderIndex);
         res.status(201).json({ success: true, data: { questionId } });
     } catch (error) {
         next(error);
@@ -24,7 +24,7 @@ export const createQuestion = async (req: Request, res: Response, next: NextFunc
 
 export const getSectionQuiz = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const sectionId = parseInt(req.params.sectionId);
+        const sectionId = parseInt(req.params.sectionId as string);
         const userId = req.user!.id;
         const quiz = await quizService.getQuizForSection(sectionId, userId);
         res.json({ success: true, data: quiz }); // if null, data is null, which is handled by frontend
@@ -35,7 +35,7 @@ export const getSectionQuiz = async (req: Request, res: Response, next: NextFunc
 
 export const submitQuiz = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-        const quizId = parseInt(req.params.quizId);
+        const quizId = parseInt(req.params.quizId as string);
         const userId = req.user!.id;
         const { answers } = req.body; // Map<number, string> expected from frontend
         

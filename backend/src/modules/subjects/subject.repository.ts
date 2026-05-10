@@ -6,6 +6,8 @@ export interface SubjectRow {
     slug: string;
     description: string | null;
     is_published: boolean;
+    instructor_id: number | null;
+    image_url: string | null;
     created_at: Date;
     updated_at: Date;
 }
@@ -43,4 +45,30 @@ export const findById = async (id: number): Promise<SubjectRow | undefined> => {
 
 export const findBySlug = async (slug: string): Promise<SubjectRow | undefined> => {
     return db('subjects').where({ slug }).first();
+};
+
+export const findByInstructorId = async (instructorId: number): Promise<SubjectRow[]> => {
+    return db('subjects')
+        .where({ instructor_id: instructorId })
+        .orderBy('created_at', 'desc');
+};
+
+export const createSubject = async (
+    data: Omit<SubjectRow, 'id' | 'created_at' | 'updated_at'>
+): Promise<number> => {
+    const [id] = await db('subjects').insert(data);
+    return id;
+};
+
+export const updateSubject = async (
+    id: number,
+    data: Partial<Omit<SubjectRow, 'id' | 'created_at' | 'updated_at'>>
+): Promise<boolean> => {
+    const updated = await db('subjects').where({ id }).update(data);
+    return updated > 0;
+};
+
+export const deleteSubject = async (id: number): Promise<boolean> => {
+    const deleted = await db('subjects').where({ id }).delete();
+    return deleted > 0;
 };

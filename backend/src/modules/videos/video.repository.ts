@@ -29,3 +29,18 @@ export const findBySectionIds = async (sectionIds: number[]): Promise<VideoRow[]
         .orderBy('section_id', 'asc')
         .orderBy('order_index', 'asc');
 };
+
+export const createVideo = async (data: Omit<VideoRow, 'id' | 'created_at' | 'updated_at'>): Promise<number> => {
+    const [id] = await db('videos').insert(data);
+    return id;
+};
+
+export const updateVideo = async (id: number, data: Partial<Omit<VideoRow, 'id' | 'created_at' | 'updated_at'>>): Promise<boolean> => {
+    const updated = await db('videos').where({ id }).update(data);
+    return updated > 0;
+};
+
+export const deleteVideo = async (id: number): Promise<boolean> => {
+    const deleted = await db('videos').where({ id }).delete();
+    return deleted > 0;
+};

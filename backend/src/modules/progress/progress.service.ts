@@ -2,6 +2,8 @@ import db from '../../config/db';
 import * as progressRepo from './progress.repository';
 import { createApiError } from '../../middleware/errorHandler';
 
+import { recordActivity } from '../gamification/gamification.service';
+
 // ── Get video progress ───────────────────────────────────────────
 export const getVideoProgress = async (userId: number, videoId: number) => {
     const progress = await progressRepo.findByUserAndVideo(userId, videoId);
@@ -31,7 +33,11 @@ export const updateVideoProgress = async (
         cappedPosition = video.duration_seconds;
     }
 
-    await progressRepo.upsert(userId, videoId, cappedPosition, isCompleted);
+    const { newlyCompleted } = await progressRepo.upsert(userId, videoId, cappedPosition, isCompleted);
+
+    if (newlyCompleted) {
+        await recordActivity(userId, 10); // +10 XP for video completion
+    }
 
     return { success: true };
 };

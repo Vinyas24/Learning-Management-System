@@ -27,8 +27,9 @@ export const upsert = async (
     videoId: number,
     lastPositionSeconds: number,
     isCompleted?: boolean
-): Promise<void> => {
+): Promise<{ newlyCompleted: boolean }> => {
     const existing = await findByUserAndVideo(userId, videoId);
+    let newlyCompleted = false;
 
     if (existing) {
         const update: Record<string, unknown> = {
@@ -39,12 +40,14 @@ export const upsert = async (
         if (isCompleted === true && !existing.is_completed) {
             update.is_completed = true;
             update.completed_at = new Date();
+            newlyCompleted = true;
         }
 
         await db('video_progress')
             .where({ user_id: userId, video_id: videoId })
             .update(update);
     } else {
+        if (isCompleted === true) newlyCompleted = true;
         await db('video_progress').insert({
             user_id: userId,
             video_id: videoId,
@@ -53,6 +56,8 @@ export const upsert = async (
             completed_at: isCompleted ? new Date() : null,
         });
     }
+
+    return { newlyCompleted };
 };
 
 // ── Get subject-level progress aggregation ───────────────────────

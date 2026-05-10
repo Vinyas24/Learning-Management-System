@@ -58,6 +58,16 @@ export default function Header() {
                 <nav style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {isAuthenticated ? (
                         <>
+                            {(user?.role === 'instructor' || user?.role === 'admin') && (
+                                <Link href="/instructor" style={{
+                                    padding: '8px 18px', borderRadius: '99px',
+                                    fontSize: '14px', fontWeight: 600, color: '#f97316',
+                                    textDecoration: 'none', transition: 'all 0.2s',
+                                    background: 'rgba(249,115,22,0.1)'
+                                }}>
+                                    Instructor View
+                                </Link>
+                            )}
                             <Link href="/profile" style={{
                                 padding: '8px 18px', borderRadius: '99px',
                                 fontSize: '14px', fontWeight: 600, color: '#6b7280',

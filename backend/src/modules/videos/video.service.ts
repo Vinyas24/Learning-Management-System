@@ -1,6 +1,7 @@
 import db from '../../config/db';
 import * as videoRepo from './video.repository';
 import * as sectionRepo from '../../modules/sections/section.repository';
+import * as subjectRepo from '../../modules/subjects/subject.repository';
 import { flattenSubjectVideos, getPrevNextVideoIds } from '../../utils/ordering';
 import { createApiError } from '../../middleware/errorHandler';
 
@@ -74,4 +75,79 @@ export const getVideo = async (videoId: number, userId: number) => {
         locked,
         unlock_reason: unlockReason,
     };
+};
+
+// ── Instructor Video Management ────────────────────────────────────
+export const createVideo = async (
+    instructorId: number,
+    userRole: string,
+    data: { section_id: number; title: string; description?: string; youtube_url: string; order_index: number; duration_seconds?: number }
+) => {
+    const section = await sectionRepo.findById(data.section_id);
+    if (!section) throw createApiError('Section not found', 404);
+
+    const subject = await subjectRepo.findById(section.subject_id);
+    if (!subject) throw createApiError('Subject not found', 404);
+
+    if (userRole !== 'admin' && subject.instructor_id !== instructorId) {
+        throw createApiError('Unauthorized to add videos to this section', 403);
+    }
+
+    const newVideo = {
+        section_id: data.section_id,
+        title: data.title,
+        description: data.description || null,
+        youtube_url: data.youtube_url,
+        order_index: data.order_index,
+        duration_seconds: data.duration_seconds || null
+    };
+
+    const id = await videoRepo.createVideo(newVideo);
+    return id;
+};
+
+export const updateVideo = async (
+    instructorId: number,
+    userRole: string,
+    videoId: number,
+    data: { title?: string; description?: string; youtube_url?: string; order_index?: number; duration_seconds?: number }
+) => {
+    const video = await videoRepo.findById(videoId);
+    if (!video) throw createApiError('Video not found', 404);
+
+    const section = await sectionRepo.findById(video.section_id);
+    if (!section) throw createApiError('Section not found', 404);
+
+    const subject = await subjectRepo.findById(section.subject_id);
+    if (!subject) throw createApiError('Subject not found', 404);
+
+    if (userRole !== 'admin' && subject.instructor_id !== instructorId) {
+        throw createApiError('Unauthorized to update this video', 403);
+    }
+
+    const updateData: any = { ...data };
+    await videoRepo.updateVideo(videoId, updateData);
+    return true;
+};
+
+export const deleteVideo = async (
+    instructorId: number,
+    userRole: string,
+    videoId: number
+) => {
+    const video = await videoRepo.findById(videoId);
+    if (!video) throw createApiError('Video not found', 404);
+
+    const section = await sectionRepo.findById(video.section_id);
+    if (!section) throw createApiError('Section not found', 404);
+
+    const subject = await subjectRepo.findById(section.subject_id);
+    if (!subject) throw createApiError('Subject not found', 404);
+
+    if (userRole !== 'admin' && subject.instructor_id !== instructorId) {
+        throw createApiError('Unauthorized to delete this video', 403);
+    }
+
+    await videoRepo.deleteVideo(videoId);
+    return true;
 };

@@ -15,6 +15,7 @@ interface Section {
     title: string;
     order_index: number;
     videos: Video[];
+    quiz?: { id: number; passed: boolean } | null;
 }
 
 interface SidebarState {

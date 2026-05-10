@@ -25,6 +25,12 @@ interface EnrolledSubject extends Subject {
     progress: SubjectProgress;
 }
 
+interface GamificationStats {
+    xp: number;
+    current_streak: number;
+    longest_streak: number;
+}
+
 const CARD_COLORS = [
     { from: '#f97316', to: '#ec4899', light: '#fff7ed', glow: 'rgba(249,115,22,0.15)' },
     { from: '#3b82f6', to: '#6366f1', light: '#eff6ff', glow: 'rgba(59,130,246,0.15)' },
@@ -36,8 +42,37 @@ export default function ProfilePage() {
     const { user } = useAuthStore();
     const [enrolledSubjects, setEnrolledSubjects] = useState<EnrolledSubject[]>([]);
     const [globalResume, setGlobalResume] = useState<{ video_id: number; subject_id: number } | null>(null);
+    const [stats, setStats] = useState<GamificationStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const handleDownloadCertificate = async (e: React.MouseEvent, subjectId: number) => {
+        e.preventDefault(); // Prevent navigating to subject
+        try {
+            const token = useAuthStore.getState().accessToken;
+            // Ensure claimed
+            await apiClient(`/api/certificates/${subjectId}/claim`, { method: 'POST' }).catch(() => {});
+
+            const { config } = await import('@/lib/config');
+            const res = await fetch(`${config.API_BASE_URL}/api/certificates/${subjectId}/download`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Certificate_${subjectId}.pdf`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            } else {
+                alert('Failed to download certificate');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('An error occurred while generating the certificate.');
+        }
+    };
 
     useEffect(() => {
         const fetchProfileData = async () => {
@@ -58,9 +93,11 @@ export default function ProfilePage() {
                     .map(r => ({ ...r.subject, progress: r.progress! }));
 
                 const globalResumeRes = await getGlobalResume().catch(() => null);
+                const statsRes = await apiClient<{ data: GamificationStats }>('/api/gamification/stats').catch(() => ({ data: null }));
 
                 setEnrolledSubjects(activeSubjects);
                 setGlobalResume(globalResumeRes);
+                if (statsRes.data) setStats(statsRes.data);
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : 'Failed to load profile data';
                 setError(message);
@@ -117,9 +154,10 @@ export default function ProfilePage() {
                             {/* Quick stats */}
                             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
                                 {[
-                                    { label: 'Courses', value: enrolledSubjects.length },
-                                    { label: 'Lessons Done', value: totalCompleted },
-                                    { label: 'Total Lessons', value: totalVideos },
+                                    { label: 'Total XP', value: stats?.xp || 0, color: '#a855f7' },
+                                    { label: 'Day Streak', value: `${stats?.current_streak || 0} 🔥`, color: '#f97316' },
+                                    { label: 'Courses', value: enrolledSubjects.length, color: 'white' },
+                                    { label: 'Lessons Done', value: totalCompleted, color: 'white' },
                                 ].map(stat => (
                                     <div key={stat.label} style={{
                                         background: 'rgba(255,255,255,0.06)',
@@ -130,7 +168,7 @@ export default function ProfilePage() {
                                         backdropFilter: 'blur(10px)',
                                         minWidth: '90px',
                                     }}>
-                                        <div style={{ fontSize: '28px', fontWeight: 900, color: 'white', lineHeight: 1 }}>{stat.value}</div>
+                                        <div style={{ fontSize: '28px', fontWeight: 900, color: stat.color, lineHeight: 1 }}>{stat.value}</div>
                                         <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', fontWeight: 600, marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{stat.label}</div>
                                     </div>
                                 ))}
@@ -283,21 +321,40 @@ export default function ProfilePage() {
                                                 }} />
                                             </div>
 
-                                            {/* Resume CTA */}
+                                            {/* Resume / Claim CTA */}
                                             <div style={{ marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                <span style={{ fontSize: '13px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                                    {pct === 100 ? '✅ Completed' : '▶ Resume Course'}
-                                                </span>
-                                                <div style={{
-                                                    width: '36px', height: '36px', borderRadius: '50%',
-                                                    background: `linear-gradient(135deg, ${color.from}, ${color.to})`,
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    boxShadow: `0 4px 12px ${color.glow}`,
-                                                }}>
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                        <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
-                                                    </svg>
-                                                </div>
+                                                {pct === 100 ? (
+                                                    <button onClick={(e) => handleDownloadCertificate(e, item.id)} style={{
+                                                        background: 'linear-gradient(135deg, #10b981, #059669)',
+                                                        color: 'white', border: 'none', borderRadius: '99px',
+                                                        padding: '10px 20px', fontSize: '14px', fontWeight: 800,
+                                                        cursor: 'pointer', boxShadow: '0 4px 15px rgba(16,185,129,0.3)',
+                                                        display: 'inline-flex', alignItems: 'center', gap: '8px'
+                                                    }}>
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                                            <polyline points="7 10 12 15 17 10"></polyline>
+                                                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                                                        </svg>
+                                                        Download Certificate
+                                                    </button>
+                                                ) : (
+                                                    <>
+                                                        <span style={{ fontSize: '13px', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                                            ▶ Resume Course
+                                                        </span>
+                                                        <div style={{
+                                                            width: '36px', height: '36px', borderRadius: '50%',
+                                                            background: `linear-gradient(135deg, ${color.from}, ${color.to})`,
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            boxShadow: `0 4px 12px ${color.glow}`,
+                                                        }}>
+                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                                <path d="M5 12h14" /><path d="m12 5 7 7-7 7" />
+                                                            </svg>
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
                                     </Link>

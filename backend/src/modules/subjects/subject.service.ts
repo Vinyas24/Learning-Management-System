@@ -10,6 +10,49 @@ export const listSubjects = async (page: number, pageSize: number, q?: string) =
     return subjectRepo.findAll(page, pageSize, q);
 };
 
+// ── Instructor Subject Management ────────────────────────────────
+export const getInstructorSubjects = async (instructorId: number) => {
+    return subjectRepo.findByInstructorId(instructorId);
+};
+
+export const createSubject = async (instructorId: number, data: { title: string; slug: string; description?: string; image_url?: string }) => {
+    const newSubject = {
+        title: data.title,
+        slug: data.slug,
+        description: data.description || null,
+        image_url: data.image_url || null,
+        instructor_id: instructorId,
+        is_published: false
+    };
+    const id = await subjectRepo.createSubject(newSubject);
+    return id;
+};
+
+export const updateSubject = async (instructorId: number, userRole: string, subjectId: number, data: { title?: string; slug?: string; description?: string; image_url?: string; is_published?: boolean }) => {
+    const subject = await subjectRepo.findById(subjectId);
+    if (!subject) throw createApiError('Subject not found', 404);
+    
+    if (userRole !== 'admin' && subject.instructor_id !== instructorId) {
+        throw createApiError('Unauthorized to update this subject', 403);
+    }
+
+    const updateData: any = { ...data };
+    await subjectRepo.updateSubject(subjectId, updateData);
+    return true;
+};
+
+export const deleteSubject = async (instructorId: number, userRole: string, subjectId: number) => {
+    const subject = await subjectRepo.findById(subjectId);
+    if (!subject) throw createApiError('Subject not found', 404);
+    
+    if (userRole !== 'admin' && subject.instructor_id !== instructorId) {
+        throw createApiError('Unauthorized to delete this subject', 403);
+    }
+
+    await subjectRepo.deleteSubject(subjectId);
+    return true;
+};
+
 // ── Get Subject by ID (public) ───────────────────────────────────
 export const getSubject = async (subjectId: number) => {
     const subject = await subjectRepo.findById(subjectId);

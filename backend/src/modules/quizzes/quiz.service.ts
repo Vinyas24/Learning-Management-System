@@ -1,11 +1,36 @@
 import * as quizRepository from './quiz.repository';
+import * as sectionRepo from '../../modules/sections/section.repository';
+import * as subjectRepo from '../../modules/subjects/subject.repository';
 import { createApiError } from '../../middleware/errorHandler';
 
-export const createQuiz = async (sectionId: number, title: string, passingScore: number) => {
+export const createQuiz = async (instructorId: number, userRole: string, sectionId: number, title: string, passingScore: number) => {
+    const section = await sectionRepo.findById(sectionId);
+    if (!section) throw createApiError('Section not found', 404);
+
+    const subject = await subjectRepo.findById(section.subject_id);
+    if (!subject) throw createApiError('Subject not found', 404);
+
+    if (userRole !== 'admin' && subject.instructor_id !== instructorId) {
+        throw createApiError('Unauthorized to add quizzes to this section', 403);
+    }
+
     return quizRepository.createQuiz({ section_id: sectionId, title, passing_score: passingScore });
 };
 
-export const createQuestion = async (quizId: number, questionText: string, options: string[], correctAnswer: string, orderIndex: number) => {
+export const createQuestion = async (instructorId: number, userRole: string, quizId: number, questionText: string, options: string[], correctAnswer: string, orderIndex: number) => {
+    const quiz = await quizRepository.getQuizById(quizId);
+    if (!quiz) throw createApiError('Quiz not found', 404);
+
+    const section = await sectionRepo.findById(quiz.section_id);
+    if (!section) throw createApiError('Section not found', 404);
+
+    const subject = await subjectRepo.findById(section.subject_id);
+    if (!subject) throw createApiError('Subject not found', 404);
+
+    if (userRole !== 'admin' && subject.instructor_id !== instructorId) {
+        throw createApiError('Unauthorized to add questions to this quiz', 403);
+    }
+
     if (!options.includes(correctAnswer)) {
         throw createApiError('Correct answer must be one of the provided options', 400);
     }
@@ -68,6 +93,11 @@ export const submitQuiz = async (quizId: number, userId: number, answers: Record
         score: scorePercentage,
         passed
     });
+
+    if (passed) {
+        const { recordActivity } = await import('../gamification/gamification.service');
+        await recordActivity(userId, 50);
+    }
 
     return {
         score: scorePercentage,
