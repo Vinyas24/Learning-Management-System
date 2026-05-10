@@ -33,6 +33,16 @@ export const getSectionQuiz = async (req: Request, res: Response, next: NextFunc
     }
 };
 
+export const getInstructorQuiz = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+        const quizId = parseInt(req.params.quizId as string);
+        const quiz = await quizService.getQuizForInstructor(req.user!.id, req.user!.role, quizId);
+        res.json({ success: true, data: quiz });
+    } catch (error) {
+        next(error);
+    }
+};
+
 export const submitQuiz = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
         const quizId = parseInt(req.params.quizId as string);

@@ -101,8 +101,8 @@ export async function seed(knex: Knex): Promise<void> {
         {
             id: 6, section_id: 3, title: 'Callbacks & Promises',
             description: 'Understanding asynchronous JavaScript with callbacks and promises.',
-            youtube_url: 'https://www.youtube.com/watch?v=_8gHHBlbziw',
-            order_index: 0, duration_seconds: 900,
+            youtube_url: 'https://www.youtube.com/watch?v=i2SPq-nb3NQ',
+            order_index: 0, duration_seconds: 90,
         },
         {
             id: 7, section_id: 3, title: 'Async/Await',

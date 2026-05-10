@@ -63,6 +63,28 @@ export const getQuizForSection = async (sectionId: number, userId: number) => {
     };
 };
 
+export const getQuizForInstructor = async (instructorId: number, userRole: string, quizId: number) => {
+    const quiz = await quizRepository.getQuizById(quizId);
+    if (!quiz) throw createApiError('Quiz not found', 404);
+
+    const section = await sectionRepo.findById(quiz.section_id);
+    if (!section) throw createApiError('Section not found', 404);
+
+    const subject = await subjectRepo.findById(section.subject_id);
+    if (!subject) throw createApiError('Subject not found', 404);
+
+    if (userRole !== 'admin' && subject.instructor_id !== instructorId) {
+        throw createApiError('Unauthorized to view this quiz', 403);
+    }
+
+    const questions = await quizRepository.getQuestionsByQuizId(quiz.id);
+    
+    return {
+        ...quiz,
+        questions // Do not strip correct_answer so the instructor can see it
+    };
+};
+
 export const submitQuiz = async (quizId: number, userId: number, answers: Record<number, string>) => {
     const quiz = await quizRepository.getQuizById(quizId);
     if (!quiz) throw createApiError('Quiz not found', 404);
