@@ -31,8 +31,12 @@ export default function RegisterPage() {
         setLoading(true);
 
         try {
-            await registerUser(name, email, password);
-            router.push('/');
+            const user = await registerUser(name, email, password);
+            if (user.role === 'instructor' || user.role === 'admin') {
+                router.push('/instructor');
+            } else {
+                router.push('/profile');
+            }
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Registration failed';
             setError(message);

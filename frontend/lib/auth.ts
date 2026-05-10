@@ -11,7 +11,7 @@ interface AuthResponse {
     accessToken: string;
 }
 
-export async function loginUser(email: string, password: string): Promise<void> {
+export async function loginUser(email: string, password: string): Promise<AuthResponse['user']> {
     const data = await apiClient<AuthResponse>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
@@ -19,13 +19,14 @@ export async function loginUser(email: string, password: string): Promise<void> 
     });
 
     useAuthStore.getState().login(data.user, data.accessToken);
+    return data.user;
 }
 
 export async function registerUser(
     name: string,
     email: string,
     password: string
-): Promise<void> {
+): Promise<AuthResponse['user']> {
     const data = await apiClient<AuthResponse>('/api/auth/register', {
         method: 'POST',
         body: JSON.stringify({ name, email, password }),
@@ -33,6 +34,7 @@ export async function registerUser(
     });
 
     useAuthStore.getState().login(data.user, data.accessToken);
+    return data.user;
 }
 
 export async function logoutUser(): Promise<void> {

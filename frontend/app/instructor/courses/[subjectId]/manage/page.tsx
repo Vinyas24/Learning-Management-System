@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { apiClient } from '@/lib/apiClient';
@@ -26,7 +26,8 @@ interface SubjectTree {
     sections: Section[];
 }
 
-export default function ManageCoursePage({ params }: { params: { subjectId: string } }) {
+export default function ManageCoursePage({ params }: { params: Promise<{ subjectId: string }> }) {
+    const { subjectId } = React.use(params);
     const router = useRouter();
     const [tree, setTree] = useState<SubjectTree | null>(null);
     const [loading, setLoading] = useState(true);
@@ -43,11 +44,11 @@ export default function ManageCoursePage({ params }: { params: { subjectId: stri
 
     useEffect(() => {
         fetchTree();
-    }, [params.subjectId]);
+    }, [subjectId]);
 
     const fetchTree = async () => {
         try {
-            const res = await apiClient<{ data: SubjectTree }>(`/api/subjects/${params.subjectId}/tree`);
+            const res = await apiClient<{ data: SubjectTree }>(`/api/subjects/${subjectId}/tree`);
             setTree(res.data);
         } catch (error) {
             console.error("Failed to fetch curriculum tree", error);
@@ -62,7 +63,7 @@ export default function ManageCoursePage({ params }: { params: { subjectId: stri
             const order_index = tree ? tree.sections.length : 0;
             await apiClient('/api/sections', {
                 method: 'POST',
-                body: JSON.stringify({ subject_id: parseInt(params.subjectId), title: newSectionTitle, order_index })
+                body: JSON.stringify({ subject_id: parseInt(subjectId), title: newSectionTitle, order_index })
             });
             setNewSectionTitle('');
             setIsAddingSection(false);
@@ -105,7 +106,7 @@ export default function ManageCoursePage({ params }: { params: { subjectId: stri
 
     const handlePublishToggle = async () => {
         try {
-            await apiClient(`/api/subjects/${params.subjectId}`, {
+            await apiClient(`/api/subjects/${subjectId}`, {
                 method: 'PUT',
                 body: JSON.stringify({ is_published: true })
             });
