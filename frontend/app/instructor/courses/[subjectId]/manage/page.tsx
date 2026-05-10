@@ -26,6 +26,21 @@ interface SubjectTree {
     sections: Section[];
 }
 
+interface QuizQuestion {
+    id: number;
+    question_text: string;
+    options: string[];
+    correct_answer: string;
+    order_index: number;
+}
+
+interface InstructorQuiz {
+    id: number;
+    title: string;
+    passing_score: number;
+    questions: QuizQuestion[];
+}
+
 export default function ManageCoursePage({ params }: { params: Promise<{ subjectId: string }> }) {
     const { subjectId } = React.use(params);
     const router = useRouter();
@@ -41,6 +56,12 @@ export default function ManageCoursePage({ params }: { params: Promise<{ subject
 
     const [addingQuizToSection, setAddingQuizToSection] = useState<number | null>(null);
     const [newQuizTitle, setNewQuizTitle] = useState('');
+
+    const [managingQuizId, setManagingQuizId] = useState<number | null>(null);
+    const [activeQuizData, setActiveQuizData] = useState<InstructorQuiz | null>(null);
+    const [newQuestionText, setNewQuestionText] = useState('');
+    const [newQuestionOptions, setNewQuestionOptions] = useState<string[]>(['', '', '', '']);
+    const [newQuestionCorrectAnswer, setNewQuestionCorrectAnswer] = useState<string>('');
 
     useEffect(() => {
         fetchTree();
@@ -116,6 +137,52 @@ export default function ManageCoursePage({ params }: { params: Promise<{ subject
         }
     };
 
+    const handleManageQuiz = async (quizId: number) => {
+        if (managingQuizId === quizId) {
+            setManagingQuizId(null);
+            setActiveQuizData(null);
+            return;
+        }
+        setManagingQuizId(quizId);
+        setActiveQuizData(null);
+        try {
+            const res = await apiClient<{ data: InstructorQuiz }>(`/api/quizzes/${quizId}/instructor`);
+            setActiveQuizData(res.data);
+        } catch (error) {
+            console.error(error);
+            alert('Failed to load quiz details');
+        }
+    };
+
+    const handleAddQuestion = async (e: React.FormEvent, quizId: number) => {
+        e.preventDefault();
+        if (!newQuestionCorrectAnswer) {
+            alert('Please select a correct answer');
+            return;
+        }
+        try {
+            const orderIndex = activeQuizData ? activeQuizData.questions.length : 0;
+            await apiClient(`/api/quizzes/${quizId}/questions`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    questionText: newQuestionText,
+                    options: newQuestionOptions,
+                    correctAnswer: newQuestionCorrectAnswer,
+                    orderIndex
+                })
+            });
+            
+            // Refresh quiz data
+            setNewQuestionText('');
+            setNewQuestionOptions(['', '', '', '']);
+            setNewQuestionCorrectAnswer('');
+            handleManageQuiz(quizId); // re-fetch
+        } catch (error) {
+            console.error(error);
+            alert('Failed to add question');
+        }
+    };
+
     if (loading) return <div style={{ padding: '60px', textAlign: 'center' }}>Loading curriculum...</div>;
     if (!tree) return <div style={{ padding: '60px', textAlign: 'center' }}>Course not found</div>;
 
@@ -169,12 +236,85 @@ export default function ManageCoursePage({ params }: { params: Promise<{ subject
                                     ))}
                                     
                                     {section.quiz && (
-                                        <div style={{
-                                            background: '#fff7ed', borderRadius: '8px', padding: '12px 16px',
-                                            display: 'flex', alignItems: 'center', gap: '12px', border: '1px solid #fed7aa'
-                                        }}>
-                                            <span style={{ fontSize: '20px' }}>📝</span>
-                                            <span style={{ fontSize: '14px', fontWeight: 600, color: '#9a3412' }}>Module Assessment (Quiz)</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                            <div style={{
+                                                background: '#fff7ed', borderRadius: '8px', padding: '12px 16px',
+                                                display: 'flex', alignItems: 'center', gap: '12px', border: '1px solid #fed7aa'
+                                            }}>
+                                                <span style={{ fontSize: '20px' }}>📝</span>
+                                                <span style={{ fontSize: '14px', fontWeight: 600, color: '#9a3412' }}>Module Assessment (Quiz)</span>
+                                                <button 
+                                                    onClick={() => handleManageQuiz(section.quiz!.id)}
+                                                    style={{ marginLeft: 'auto', background: '#f97316', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }}
+                                                >
+                                                    {managingQuizId === section.quiz.id ? 'Close Builder' : 'Manage Questions'}
+                                                </button>
+                                            </div>
+
+                                            {managingQuizId === section.quiz.id && activeQuizData && (
+                                                <div style={{ background: '#fffaf5', border: '1px solid #fed7aa', borderRadius: '8px', padding: '16px' }}>
+                                                    <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#9a3412', marginBottom: '12px', margin: 0 }}>Existing Questions ({activeQuizData.questions.length})</h4>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+                                                        {activeQuizData.questions.map((q, idx) => (
+                                                            <div key={q.id} style={{ background: 'white', padding: '12px', borderRadius: '6px', border: '1px solid #e5e7eb' }}>
+                                                                <p style={{ fontWeight: 600, fontSize: '14px', color: '#111827', margin: '0 0 8px 0' }}>{idx + 1}. {q.question_text}</p>
+                                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                                                                    {q.options.map((opt, oIdx) => (
+                                                                        <div key={oIdx} style={{ 
+                                                                            fontSize: '13px', padding: '6px 8px', borderRadius: '4px',
+                                                                            background: opt === q.correct_answer ? '#dcfce7' : '#f3f4f6',
+                                                                            color: opt === q.correct_answer ? '#166534' : '#4b5563',
+                                                                            border: opt === q.correct_answer ? '1px solid #bbf7d0' : '1px solid transparent'
+                                                                        }}>
+                                                                            {opt} {opt === q.correct_answer && '✓'}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        {activeQuizData.questions.length === 0 && <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>No questions added yet.</p>}
+                                                    </div>
+
+                                                    <form onSubmit={(e) => handleAddQuestion(e, section.quiz!.id)} style={{ background: 'white', padding: '16px', borderRadius: '6px', border: '1px dashed #fed7aa' }}>
+                                                        <h4 style={{ fontSize: '14px', fontWeight: 600, color: '#111827', marginBottom: '12px', margin: 0 }}>Add New Question</h4>
+                                                        <input type="text" placeholder="Question Text" value={newQuestionText} onChange={e => setNewQuestionText(e.target.value)} required style={{ width: '100%', padding: '8px 12px', marginBottom: '12px', borderRadius: '6px', border: '1px solid #d1d5db', boxSizing: 'border-box' }} />
+                                                        
+                                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
+                                                            {[0, 1, 2, 3].map((i) => (
+                                                                <input 
+                                                                    key={i} type="text" placeholder={`Option ${i + 1}`} required 
+                                                                    value={newQuestionOptions[i]} 
+                                                                    onChange={e => {
+                                                                        const newOpts = [...newQuestionOptions];
+                                                                        newOpts[i] = e.target.value;
+                                                                        setNewQuestionOptions(newOpts);
+                                                                    }}
+                                                                    style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', boxSizing: 'border-box' }} 
+                                                                />
+                                                            ))}
+                                                        </div>
+
+                                                        <div style={{ marginBottom: '16px' }}>
+                                                            <label style={{ fontSize: '13px', fontWeight: 600, color: '#4b5563', display: 'block', marginBottom: '4px' }}>Correct Answer:</label>
+                                                            <select 
+                                                                value={newQuestionCorrectAnswer} 
+                                                                onChange={e => setNewQuestionCorrectAnswer(e.target.value)} 
+                                                                required
+                                                                style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #d1d5db', boxSizing: 'border-box', background: 'white' }}
+                                                            >
+                                                                <option value="" disabled>Select correct option...</option>
+                                                                {newQuestionOptions.map((opt, i) => opt.trim() !== '' && (
+                                                                    <option key={i} value={opt}>{opt}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+
+                                                        <button type="submit" style={{ background: '#f97316', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
+                                                            Save Question
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -216,7 +356,6 @@ export default function ManageCoursePage({ params }: { params: Promise<{ subject
                                             <button type="submit" style={{ background: '#f97316', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>Create Empty Quiz</button>
                                             <button type="button" onClick={() => setAddingQuizToSection(null)} style={{ background: 'transparent', color: '#6b7280', border: 'none', padding: '8px 16px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
                                         </div>
-                                        <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '8px' }}>Note: After creation, you must add questions to this quiz via the database/API directly for now.</p>
                                     </form>
                                 )}
                             </div>
