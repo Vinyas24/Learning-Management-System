@@ -1,0 +1,857 @@
+
+================================================================================
+       LEARNING MANAGEMENT SYSTEM (LMS) — COMPLETE PROJECT REPORT
+================================================================================
+
+Project Name    : LearnFlow — Learning Management System
+Technology Stack: Node.js + TypeScript (Backend), Next.js 16 (Frontend)
+Database        : MySQL via Knex.js ORM
+Architecture    : Monorepo — Decoupled REST API + React SPA
+Author          : Full-Stack Development (5-Phase Implementation)
+
+================================================================================
+TABLE OF CONTENTS
+================================================================================
+ 1.  Executive Summary
+ 2.  Project Objectives & Goals
+ 3.  Technology Stack
+ 4.  System Architecture Overview
+ 5.  Database Design & Schema
+ 6.  Backend Architecture (REST API)
+ 7.  Authentication & Security System
+ 8.  Frontend Architecture (Next.js)
+ 9.  Module-by-Module Feature Breakdown
+10.  Role-Based Access Control (RBAC)
+11.  Gamification System
+12.  Certificate System
+13.  Instructor Dashboard & Quiz Builder
+14.  API Endpoint Reference
+15.  Data Flow & Request Lifecycle
+16.  State Management (Frontend)
+17.  Development Phases Summary
+18.  Known Limitations & Future Enhancements
+
+================================================================================
+1. EXECUTIVE SUMMARY
+================================================================================
+
+LearnFlow is a full-stack, production-grade Learning Management System (LMS)
+built from the ground up using modern web technologies. The platform enables:
+
+  - STUDENTS  to browse courses, watch videos, take quizzes, track their
+              progress, earn XP points, maintain learning streaks, and
+              download certificates upon course completion.
+
+  - INSTRUCTORS to create and manage their own courses, build full curricula
+                with sections, videos, and quizzes (including individual
+                MCQ questions), and monitor student enrollment.
+
+  - ADMINS    to have full platform-wide access to all content and users.
+
+The system is built as a decoupled architecture where a TypeScript/Express
+backend exposes a REST API, and a Next.js 16 frontend consumes it. The two
+communicate exclusively through HTTP with JWT-based authentication.
+
+================================================================================
+2. PROJECT OBJECTIVES & GOALS
+================================================================================
+
+Primary Objectives:
+  - Build a scalable, secure, multi-role learning platform
+  - Implement full authentication with token rotation and refresh
+  - Enable instructor-led content creation with curriculum builder
+  - Track student video progress persistently across sessions
+  - Motivate learners with XP points, daily streaks, and certificates
+  - Protect all sensitive routes with role-based access control
+
+Non-Functional Objectives:
+  - Type-safety enforced via TypeScript on both frontend and backend
+  - RESTful API design with consistent JSON response structure
+  - Clean separation of concerns via the Repository/Service/Controller pattern
+  - A premium, modern UI with glassmorphism, gradients, and animations
+
+================================================================================
+3. TECHNOLOGY STACK
+================================================================================
+
+BACKEND
+-------
+  Runtime         : Node.js
+  Language        : TypeScript
+  Framework       : Express.js
+  ORM/Query Builder: Knex.js
+  Database        : MySQL (SQLite-compatible via Knex)
+  Authentication  : JWT (Access Token + Refresh Token strategy)
+  Password Hashing: bcrypt
+  PDF Generation  : PDFKit
+  Dev Tooling     : ts-node, nodemon, tsc (TypeScript Compiler)
+
+FRONTEND
+--------
+  Framework       : Next.js 16 (App Router, Turbopack)
+  Language        : TypeScript + TSX
+  State Management: Zustand (with persistence middleware)
+  Styling         : Vanilla CSS with custom design tokens
+  HTTP Client     : Native fetch() wrapped in a custom apiClient utility
+  Fonts           : Google Fonts (Inter, Outfit)
+
+INFRASTRUCTURE
+--------------
+  Version Control : Git
+  Environment Vars: dotenv (.env files, never committed to VCS)
+  API Format      : JSON REST (no GraphQL)
+  Transport Layer : HTTP/HTTPS, Cookies (HttpOnly for refresh tokens)
+
+================================================================================
+4. SYSTEM ARCHITECTURE OVERVIEW
+================================================================================
+
+The project follows a MONOREPO structure with two independent sub-projects:
+
+  /LearningManagementSystem
+  ├── /backend        ← Express REST API (port 5000)
+  └── /frontend       ← Next.js Web Application (port 3000)
+
+ARCHITECTURAL PATTERN: Three-Tier Architecture
+
+  [Browser / Client]
+        │
+        ▼
+  [Next.js Frontend - Port 3000]  ← Tier 1: Presentation Layer
+        │  HTTP Requests (REST)
+        ▼
+  [Express.js Backend - Port 5000] ← Tier 2: Application/Business Logic Layer
+        │  Knex.js Queries
+        ▼
+  [MySQL Database]                 ← Tier 3: Data Layer
+
+BACKEND INTERNAL DESIGN: Modular MVC
+
+  Each feature domain is isolated in its own module folder:
+    /src/modules/<feature>/
+      ├── <feature>.controller.ts  ← Handles HTTP req/res
+      ├── <feature>.service.ts     ← Business logic
+      ├── <feature>.repository.ts  ← Database queries
+      ├── <feature>.routes.ts      ← Route definitions + middleware
+      └── <feature>.model.ts       ← TypeScript interfaces/types
+
+  This strict separation ensures:
+    - Controllers never touch the database directly
+    - Services contain all business rules and validation
+    - Repositories are the single source of truth for DB queries
+
+FRONTEND INTERNAL DESIGN: Next.js App Router
+
+  /app                    ← File-system based routing
+  /components             ← Reusable UI components
+  /lib                    ← API client, utility functions
+  /store                  ← Zustand global state stores
+
+================================================================================
+5. DATABASE DESIGN & SCHEMA
+================================================================================
+
+The database schema was built incrementally using 11 Knex migrations.
+Each migration file is versioned and handles both UP (apply) and DOWN (rollback).
+
+TABLE: users
+  - id               BIGINT PRIMARY KEY AUTO INCREMENT
+  - email            VARCHAR(255) UNIQUE NOT NULL
+  - password_hash    VARCHAR(255) NOT NULL
+  - name             VARCHAR(255) NOT NULL
+  - role             ENUM('student','instructor','admin') DEFAULT 'student'
+  - xp               INT DEFAULT 0
+  - current_streak   INT DEFAULT 0
+  - longest_streak   INT DEFAULT 0
+  - last_active_date DATE NULL
+  - created_at, updated_at
+
+TABLE: subjects  (Courses)
+  - id               BIGINT PRIMARY KEY
+  - title            VARCHAR(255) NOT NULL
+  - slug             VARCHAR(255) UNIQUE NOT NULL
+  - description      TEXT
+  - image_url        VARCHAR(500) NULL
+  - instructor_id    BIGINT FK → users(id) NULL
+  - is_published     BOOLEAN DEFAULT false
+  - created_at, updated_at
+
+TABLE: sections  (Chapters within a course)
+  - id               BIGINT PRIMARY KEY
+  - subject_id       BIGINT FK → subjects(id) CASCADE DELETE
+  - title            VARCHAR(255) NOT NULL
+  - order_index      INT NOT NULL
+  - created_at, updated_at
+
+TABLE: videos
+  - id               BIGINT PRIMARY KEY
+  - section_id       BIGINT FK → sections(id) CASCADE DELETE
+  - title            VARCHAR(255) NOT NULL
+  - description      TEXT
+  - youtube_url      VARCHAR(500) NOT NULL
+  - duration_seconds INT NULL
+  - order_index      INT NOT NULL
+  - created_at, updated_at
+
+TABLE: enrollments
+  - id               BIGINT PRIMARY KEY
+  - user_id          BIGINT FK → users(id) CASCADE DELETE
+  - subject_id       BIGINT FK → subjects(id) CASCADE DELETE
+  - enrolled_at      TIMESTAMP
+  - UNIQUE(user_id, subject_id)
+
+TABLE: video_progress
+  - id                     BIGINT PRIMARY KEY
+  - user_id                BIGINT FK → users(id)
+  - video_id               BIGINT FK → videos(id)
+  - last_position_seconds  INT DEFAULT 0
+  - is_completed           BOOLEAN DEFAULT false
+  - completed_at           TIMESTAMP NULL
+  - UNIQUE(user_id, video_id)
+
+TABLE: refresh_tokens
+  - id          BIGINT PRIMARY KEY
+  - user_id     BIGINT FK → users(id) CASCADE DELETE
+  - token_hash  VARCHAR(255) NOT NULL (SHA-256 hashed)
+  - expires_at  TIMESTAMP NOT NULL
+  - revoked_at  TIMESTAMP NULL
+
+TABLE: quizzes
+  - id            BIGINT PRIMARY KEY
+  - section_id    BIGINT FK → sections(id) CASCADE DELETE
+  - title         VARCHAR(255) NOT NULL
+  - passing_score INT DEFAULT 50
+  - UNIQUE(section_id)  ← One quiz per section maximum
+
+TABLE: questions
+  - id             BIGINT PRIMARY KEY
+  - quiz_id        BIGINT FK → quizzes(id) CASCADE DELETE
+  - question_text  TEXT NOT NULL
+  - options        JSON NOT NULL  ← Array of 4 answer choices
+  - correct_answer VARCHAR(255) NOT NULL
+  - order_index    INT NOT NULL
+
+TABLE: quiz_results
+  - id       BIGINT PRIMARY KEY
+  - user_id  BIGINT FK → users(id)
+  - quiz_id  BIGINT FK → quizzes(id)
+  - score    INT NOT NULL (percentage 0-100)
+  - passed   BOOLEAN DEFAULT false
+  - UNIQUE(user_id, quiz_id)
+
+TABLE: certificates
+  - id                BIGINT PRIMARY KEY
+  - user_id           BIGINT FK → users(id)
+  - subject_id        BIGINT FK → subjects(id)
+  - certificate_hash  UUID UNIQUE NOT NULL
+  - issued_at         TIMESTAMP
+  - UNIQUE(user_id, subject_id)
+
+KEY RELATIONSHIPS:
+  users ──< enrollments >── subjects
+  subjects ──< sections ──< videos
+  sections ──[ quizzes ] ──< questions
+  users ──< video_progress >── videos
+  users ──< quiz_results >── quizzes
+  users ──< certificates >── subjects
+
+================================================================================
+6. BACKEND ARCHITECTURE (REST API)
+================================================================================
+
+The backend is a Node.js + Express application written fully in TypeScript.
+It runs on port 5000 and exposes a RESTful JSON API.
+
+ENTRY POINTS:
+  src/server.ts   → Creates HTTP server, starts listening on PORT
+  src/app.ts      → Configures Express: middleware, routes, error handler
+
+MIDDLEWARE STACK (applied in order):
+  1. CORS           → Restricts requests to allowed origins (localhost:3000)
+  2. express.json() → Parses incoming JSON request bodies
+  3. cookieParser() → Reads HttpOnly cookies (for refresh tokens)
+  4. requestLogger  → Logs method, URL, status, and response time
+
+ROUTE MODULES:
+  /api/health        → Health check endpoint
+  /api/auth          → Register, Login, Logout, Refresh Token
+  /api/subjects      → Course CRUD + curriculum tree
+  /api/sections      → Section CRUD (instructor-protected)
+  /api/videos        → Video CRUD (instructor-protected)
+  /api/progress      → Video progress tracking + global resume
+  /api/quizzes       → Quiz + Question CRUD, submission, results
+  /api/certificates  → Certificate claiming + PDF download
+  /api/gamification  → XP and streak stats
+  /api/instructor    → Instructor dashboard aggregated statistics
+
+ERROR HANDLING:
+  A global error handler middleware is registered last in app.ts.
+  All controllers wrap logic in try/catch and pass errors to next().
+  Errors created with createApiError(message, statusCode) produce:
+    { success: false, error: { message: "...", statusCode: 400 } }
+
+REPOSITORY PATTERN:
+  All SQL queries are isolated in *.repository.ts files using Knex.js.
+  This means the business logic layer (*.service.ts) never writes raw SQL.
+  Example flow for marking a video complete:
+    Controller → calls progressService.updateVideoProgress()
+    Service    → validates data, calls progressRepo.upsert()
+    Repository → executes INSERT ... ON DUPLICATE KEY UPDATE via Knex
+
+================================================================================
+7. AUTHENTICATION & SECURITY SYSTEM
+================================================================================
+
+The platform implements a production-grade dual-token authentication strategy.
+
+TOKEN TYPES:
+  Access Token  → Short-lived JWT (stored in-memory in frontend)
+                  Signed with JWT_ACCESS_SECRET
+                  Contains: { userId, role, iat, exp }
+
+  Refresh Token → Long-lived JWT (stored in HttpOnly Cookie)
+                  Signed with JWT_REFRESH_SECRET
+                  Contains: { userId, tokenId (UUID) }
+                  Also stored as SHA-256 hash in refresh_tokens table
+
+FLOW — REGISTRATION:
+  1. Client POSTs { name, email, password }
+  2. Server checks email uniqueness
+  3. Password hashed with bcrypt (10 rounds)
+  4. User inserted into users table with role='student'
+  5. Access token + Refresh token generated and issued
+  6. Refresh token SHA-256 hashed and stored in DB
+  7. Refresh token sent as HttpOnly cookie; access token in JSON body
+  8. Client stores access token in-memory (Zustand) and in localStorage
+
+FLOW — LOGIN:
+  1. Client POSTs { email, password }
+  2. Server retrieves user by email, compares bcrypt hash
+  3. New access + refresh token pair generated
+  4. Refresh token stored in DB and returned as HttpOnly cookie
+  5. Access token returned in JSON body
+
+FLOW — TOKEN REFRESH (Automatic Silent Refresh):
+  1. apiClient sends request with Authorization: Bearer <accessToken>
+  2. If response is 401 (expired), apiClient.ts automatically calls
+     POST /api/auth/refresh with the HttpOnly cookie
+  3. Server verifies the refresh token JWT, looks up the hash in DB
+  4. If valid and not revoked, issues a new access token
+  5. apiClient retries the original failed request transparently
+  6. If refresh fails → user is redirected to /login
+
+FLOW — LOGOUT:
+  1. Client calls POST /api/auth/logout
+  2. Server looks up refresh token from cookie, marks revoked_at = NOW()
+  3. Client clears its Zustand auth state and localStorage
+
+SECURITY MEASURES:
+  - Passwords never stored in plain text (bcrypt)
+  - Refresh tokens never stored raw (SHA-256 hashed in DB)
+  - Access tokens are short-lived (configurable via JWT_ACCESS_EXPIRY)
+  - Refresh tokens can be revoked server-side (revoked_at column)
+  - HttpOnly cookies prevent JavaScript-based token theft (XSS protection)
+  - CORS restricted to known origins
+  - Role enforcement via requireRole(['instructor', 'admin']) middleware
+  - Instructor ownership validated for all content modifications
+
+ROUTE PROTECTION MIDDLEWARE:
+  authMiddleware  → Verifies Bearer token, attaches req.user = {id, role}
+  requireRole([]) → Checks req.user.role against allowed list
+                    Returns 403 Forbidden if not allowed
+
+================================================================================
+8. FRONTEND ARCHITECTURE (Next.js)
+================================================================================
+
+The frontend is built with Next.js 16 using the App Router and Turbopack.
+
+DIRECTORY STRUCTURE:
+  /app
+    /                   → Home page (hero + course listings)
+    /login              → Login form
+    /register           → Registration form
+    /courses            → Browse all published courses
+    /profile            → Student profile + gamification stats
+    /subjects/[id]      → Course overview + curriculum tree
+    /subjects/[id]/video/[videoId]  → Video player page
+    /subjects/[id]/quiz/[sectionId] → Quiz taking page
+    /instructor                     → Instructor dashboard
+    /instructor/courses/create      → New course creation form
+    /instructor/courses/[id]/manage → Curriculum builder
+
+  /components
+    /Auth/AuthGuard.tsx     → Route protection wrapper component
+    /Layout/Header.tsx      → Top navigation bar
+    /Sidebar/               → Course sidebar with progress
+    /Video/                 → Video player components
+    /Subject/               → Course card components
+    /common/                → Shared UI elements
+
+  /lib
+    apiClient.ts    → Centralized HTTP client with auto-refresh logic
+    auth.ts         → login/register/logout helper functions
+    progress.ts     → Progress update utilities
+    quiz.ts         → Quiz submission utilities
+    config.ts       → API base URL config
+
+  /store
+    authStore.ts    → Zustand: user identity + access token
+    sidebarStore.ts → Zustand: sidebar open/close + course navigation state
+    videoStore.ts   → Zustand: current video playback state
+
+ROUTING:
+  Next.js App Router uses file-system routing.
+  Dynamic segments like [subjectId] and [videoId] map to URL parameters.
+  In Next.js 15+, params is a Promise and must be unwrapped with React.use().
+
+AuthGuard Component:
+  Wraps any page that requires authentication.
+  Checks useAuthStore for isAuthenticated and user.role.
+  Redirects to /login if not authenticated.
+  Redirects to / if role is not in the allowedRoles prop.
+
+================================================================================
+9. MODULE-BY-MODULE FEATURE BREAKDOWN
+================================================================================
+
+MODULE 1: AUTHENTICATION (/api/auth)
+  Features:
+    - POST /api/auth/register    → Create account (default role: student)
+    - POST /api/auth/login       → Authenticate and issue tokens
+    - POST /api/auth/logout      → Revoke refresh token
+    - POST /api/auth/refresh     → Get new access token via cookie
+  Details:
+    - Role-based post-login redirect (student→/profile, instructor→/instructor)
+    - bcrypt password hashing (10 salt rounds)
+    - Dual-token JWT system with DB-backed refresh token revocation
+
+MODULE 2: SUBJECTS/COURSES (/api/subjects)
+  Features:
+    - GET  /api/subjects         → List all published courses
+    - GET  /api/subjects/:id     → Get course details
+    - GET  /api/subjects/:id/tree → Full curriculum tree with progress/lock state
+    - POST /api/subjects         → Create course (instructor/admin only)
+    - PUT  /api/subjects/:id     → Update course (owner or admin only)
+  Details:
+    - The /tree endpoint is the backbone of the course page.
+    - It returns sections → videos (with is_completed, locked) + quiz info.
+    - Locking logic: a video is locked if the previous video in the global
+      sequence is not yet completed. Cross-section boundaries also check
+      if the previous section's quiz was passed.
+
+MODULE 3: VIDEO PLAYER (/api/progress)
+  Features:
+    - GET  /api/progress/:videoId         → Get saved position for a video
+    - POST /api/progress                  → Save/update video position
+    - GET  /api/progress/subject/:id      → Course-level completion %
+    - GET  /api/progress/resume           → Get global resume-from video
+  Details:
+    - Uses upsert (INSERT ... ON DUPLICATE KEY UPDATE) for efficiency.
+    - When a video is marked complete for the first time (newlyCompleted),
+      +10 XP is automatically awarded via recordActivity().
+    - The YouTube iframe Player API is used to embed videos.
+    - Progress is auto-saved periodically and on pause/end events.
+
+MODULE 4: QUIZ SYSTEM (/api/quizzes)
+  Features:
+    - POST /api/quizzes                     → Create quiz shell (instructor)
+    - POST /api/quizzes/:id/questions       → Add MCQ question (instructor)
+    - GET  /api/quizzes/:id/instructor      → View quiz + answers (instructor)
+    - GET  /api/quizzes/section/:sectionId  → Get quiz for students (no answers)
+    - POST /api/quizzes/:id/submit          → Submit answers, get score
+  Details:
+    - One quiz maximum per section (enforced by UNIQUE constraint).
+    - Options are stored as a JSON array in the questions table.
+    - Student-facing endpoint strips correct_answer from the response.
+    - On submission, score % is calculated: (correct / total) * 100
+    - If score >= passing_score (default 50%), quiz is marked passed.
+    - Students who have already passed cannot re-submit.
+    - Passing a quiz awards +50 XP.
+    - Section-crossing videos are locked until the previous section's quiz
+      is passed (progressive learning enforcement).
+
+MODULE 5: GAMIFICATION (/api/gamification)
+  Features:
+    - GET /api/gamification/stats  → Return XP, streak, longest streak
+  XP System:
+    - +10 XP per video completed
+    - +50 XP per quiz passed
+    - Awarded automatically by recordActivity() in progress/quiz services
+  Streak System:
+    - Every call to recordActivity() checks last_active_date.
+    - If last active was yesterday → streak increments by 1.
+    - If last active was 2+ days ago → streak resets to 1.
+    - If already active today → streak stays the same.
+    - Longest streak is tracked separately and never decreases.
+
+MODULE 6: CERTIFICATES (/api/certificates)
+  Features:
+    - POST /api/certificates/:subjectId/claim  → Claim certificate
+    - GET  /api/certificates/:subjectId        → Check if certificate exists
+    - GET  /api/certificates/:subjectId/pdf    → Download PDF certificate
+  Details:
+    - Certificate can only be claimed if course completion is 100%.
+    - Claiming is idempotent — claiming twice returns the same certificate.
+    - Each certificate has a unique UUID hash for verification.
+    - PDF is generated on-the-fly using PDFKit (no file storage needed).
+    - PDF design: dark background, orange title, student name in pink,
+      course name in green, issued date and credential ID at the bottom.
+
+MODULE 7: INSTRUCTOR DASHBOARD (/api/instructor + frontend)
+  Features:
+    - GET /api/instructor/stats       → Total courses, students enrolled
+    - Course creation form with slug auto-generation
+    - Curriculum Builder: add/manage sections, videos, quizzes
+    - Quiz Builder: inline question editor with 4-option MCQ support
+  Details:
+    - All instructor mutations validate that instructor_id matches the
+      logged-in user (or user is an admin) before allowing changes.
+    - The /tree endpoint serves both students and the curriculum builder.
+    - Instructors can toggle a course between draft and published states.
+
+================================================================================
+10. ROLE-BASED ACCESS CONTROL (RBAC)
+================================================================================
+
+The platform has three roles with escalating permissions:
+
+  ROLE: student (default)
+    - Can browse published courses
+    - Can enroll and track progress
+    - Can take quizzes
+    - Can claim and download certificates
+    - Cannot create or modify course content
+    - Cannot access /instructor routes
+
+  ROLE: instructor
+    - All student permissions
+    - Can create new courses (automatically set as owner)
+    - Can add/edit sections, videos, quizzes for their OWN courses only
+    - Can view the Instructor Dashboard and their course analytics
+    - Cannot modify courses they do not own (403 Forbidden)
+
+  ROLE: admin
+    - All instructor permissions
+    - Can modify any course, regardless of ownership
+    - Full platform access, no ownership restrictions
+
+ENFORCEMENT LAYERS:
+  Layer 1 — Backend Middleware:
+    requireRole(['instructor', 'admin']) blocks any non-qualifying user
+    at the HTTP routing level before the controller even runs.
+
+  Layer 2 — Backend Service (Ownership Check):
+    For PUT/DELETE on subjects, sections, videos, quizzes:
+      service checks subject.instructor_id === req.user.id
+      If userRole === 'admin', this check is skipped (admin bypass).
+      Otherwise a 403 Forbidden is thrown.
+
+  Layer 3 — Frontend Guard:
+    <AuthGuard allowedRoles={['instructor', 'admin']}> wraps all
+    /instructor/* pages. Non-qualifying users are redirected before
+    the page even renders.
+
+  Layer 4 — Conditional UI:
+    The Header component only shows the "Instructor View" link when
+    user.role is 'instructor' or 'admin', keeping the UI clean.
+
+================================================================================
+11. GAMIFICATION SYSTEM — DEEP DIVE
+================================================================================
+
+The gamification system is designed to motivate continuous learning through
+visible progress indicators and achievement milestones.
+
+XP (EXPERIENCE POINTS):
+  - Stored in users.xp column (integer, cumulative, never resets)
+  - Awarded only on first-time completion events (not on re-watches)
+    → +10 XP: video watched to completion (is_completed set to true)
+    → +50 XP: quiz passed (score >= passing_score)
+  - The newlyCompleted flag in progress.repository.ts prevents double-awarding
+
+STREAK SYSTEM:
+  - Stored in users.current_streak and users.longest_streak
+  - Algorithm (runs on every recordActivity() call):
+    a) Fetch user's last_active_date from DB
+    b) Calculate diff = today - last_active_date (in days)
+    c) If diff == 0: already active today, no streak change
+    d) If diff == 1: consecutive day → current_streak += 1
+    e) If diff > 1:  streak broken → current_streak = 1
+    f) Update longest_streak if current_streak > longest_streak
+  - last_active_date updated to NOW() on every activity event
+
+PROFILE PAGE DISPLAY:
+  The /profile page fetches gamification stats and shows:
+    - Total XP earned with a styled badge
+    - Current streak (e.g., "7 🔥 Day Streak")
+    - Longest streak ever achieved
+    - List of enrolled courses with progress bars
+
+================================================================================
+12. CERTIFICATE SYSTEM — DEEP DIVE
+================================================================================
+
+The certificate system provides verifiable proof of course completion.
+
+CLAIMING FLOW:
+  1. Student finishes all videos and passes all quizzes in a course
+  2. Course progress reaches 100% (calculated by progress.repository.ts)
+  3. Student clicks "Claim Certificate" button on the course page
+  4. Frontend calls POST /api/certificates/:subjectId/claim
+  5. Backend verifies progress === 100% via getSubjectProgress()
+  6. A UUID (certificate_hash) is generated using uuid v4
+  7. Record inserted into certificates table
+  8. If already claimed, existing certificate is returned (idempotent)
+
+PDF GENERATION:
+  Uses PDFKit to generate a styled A4 landscape PDF in-memory.
+  The PDF is streamed directly to the HTTP response (no temp file on disk).
+  Design elements:
+    - Dark navy background (#0f172a)
+    - Orange double border frame
+    - "CERTIFICATE OF COMPLETION" in large orange text
+    - Student name in pink
+    - Course title in green
+    - Issue date and UUID credential ID in the footer
+
+VERIFICATION:
+  Each certificate has a unique UUID hash that can be used as a
+  credential ID for external verification purposes.
+
+================================================================================
+13. INSTRUCTOR DASHBOARD & QUIZ BUILDER — DEEP DIVE
+================================================================================
+
+DASHBOARD PAGE (/instructor):
+  - Shows total number of courses the instructor has created
+  - Shows total distinct students enrolled across all their courses
+  - Lists all courses with their published/draft status
+  - Quick-action buttons: "Create New Course", "Manage" (per course)
+
+COURSE CREATION (/instructor/courses/create):
+  - Form fields: Title, Slug (auto-generated from title), Description
+  - Slug is URL-friendly, auto-derived: "My Course" → "my-course"
+  - On submit: POST /api/subjects with instructor_id set server-side
+
+CURRICULUM BUILDER (/instructor/courses/[subjectId]/manage):
+  - Fetches the full course tree via GET /api/subjects/:id/tree
+  - Displays all sections with their videos and quiz status
+  - ADD SECTION: inline form to enter section title
+  - ADD VIDEO: per-section inline form for title + YouTube URL
+  - ADD QUIZ: per-section inline form to create quiz shell
+  - MANAGE QUESTIONS (Quiz Builder):
+    → Click "Manage Questions" to expand the inline Quiz Builder
+    → Calls GET /api/quizzes/:quizId/instructor (returns questions + answers)
+    → Displays all existing questions with correct answer highlighted in green
+    → Form to add new questions:
+        - Question Text (free text input)
+        - 4 Option fields (text inputs in 2x2 grid)
+        - Correct Answer dropdown (populated from entered options)
+        - "Save Question" → POST /api/quizzes/:quizId/questions
+    → Question list auto-refreshes after each addition
+  - PUBLISH: toggle course visibility via PUT /api/subjects/:id
+
+OWNERSHIP SECURITY:
+  Every mutation endpoint (POST /api/sections, /api/videos, /api/quizzes)
+  verifies the requesting instructor's ID against the subject's instructor_id.
+  Admins bypass this check. Any unauthorized attempt returns 403 Forbidden.
+
+================================================================================
+14. API ENDPOINT REFERENCE
+================================================================================
+
+AUTH
+  POST   /api/auth/register         Register new user (public)
+  POST   /api/auth/login            Login (public)
+  POST   /api/auth/logout           Logout (authenticated)
+  POST   /api/auth/refresh          Refresh access token (cookie-based)
+
+SUBJECTS (Courses)
+  GET    /api/subjects              List published courses (public)
+  GET    /api/subjects/:id          Get course by ID (public)
+  GET    /api/subjects/:id/tree     Full curriculum + progress tree (auth)
+  POST   /api/subjects              Create course (instructor/admin)
+  PUT    /api/subjects/:id          Update course (owner/admin)
+
+SECTIONS
+  POST   /api/sections              Create section (instructor/admin)
+  PUT    /api/sections/:id          Update section (owner/admin)
+  DELETE /api/sections/:id          Delete section (owner/admin)
+
+VIDEOS
+  POST   /api/videos                Add video (instructor/admin)
+  PUT    /api/videos/:id            Update video (owner/admin)
+  DELETE /api/videos/:id            Delete video (owner/admin)
+
+PROGRESS
+  GET    /api/progress/:videoId     Get saved progress for a video
+  POST   /api/progress              Save/update video progress
+  GET    /api/progress/subject/:id  Get course completion percentage
+  GET    /api/progress/resume       Get global resume-from video
+
+QUIZZES
+  POST   /api/quizzes               Create quiz (instructor/admin)
+  GET    /api/quizzes/:id/instructor View quiz with answers (instructor/admin)
+  POST   /api/quizzes/:id/questions Add question (instructor/admin)
+  GET    /api/quizzes/section/:id   Get quiz for student (no answers) (auth)
+  POST   /api/quizzes/:id/submit    Submit quiz answers (student)
+
+GAMIFICATION
+  GET    /api/gamification/stats    Get XP + streak for current user
+
+CERTIFICATES
+  POST   /api/certificates/:subjectId/claim   Claim certificate (auth)
+  GET    /api/certificates/:subjectId         Check certificate status (auth)
+  GET    /api/certificates/:subjectId/pdf     Download PDF (auth)
+
+INSTRUCTOR
+  GET    /api/instructor/stats      Dashboard aggregate stats (instructor/admin)
+
+HEALTH
+  GET    /api/health                Server health check (public)
+
+================================================================================
+15. DATA FLOW & REQUEST LIFECYCLE
+================================================================================
+
+EXAMPLE: Student Watching a Video
+
+  1. Student opens /subjects/3/video/7
+  2. Frontend useEffect → GET /api/progress/7
+     → Returns { last_position_seconds: 120, is_completed: false }
+  3. YouTube iframe initializes, seeks to 120s automatically
+  4. Every 5 seconds: POST /api/progress { videoId:7, lastPositionSeconds:148 }
+     → progressService.updateVideoProgress() called
+     → progressRepo.upsert() executes INSERT ... ON DUPLICATE KEY UPDATE
+     → is_completed still false, no XP awarded
+  5. Video ends (or 95% threshold reached):
+     POST /api/progress { videoId:7, lastPositionSeconds:600, isCompleted:true }
+     → newlyCompleted = true (first time)
+     → recordActivity(userId, 10) called → +10 XP added to users.xp
+     → current_streak may increment if not already active today
+  6. Student returns to course page
+     GET /api/subjects/3/tree → video 7 now shows is_completed: true
+     → Next video in sequence is now unlocked
+
+EXAMPLE: Instructor Adding a Quiz Question
+
+  1. Instructor opens /instructor/courses/3/manage
+  2. Page loads → GET /api/subjects/3/tree
+  3. Instructor clicks "Manage Questions" on a quiz
+  4. Frontend → GET /api/quizzes/5/instructor
+     → authMiddleware verifies Bearer token
+     → requireRole(['instructor','admin']) checks role
+     → quizService.getQuizForInstructor() validates ownership
+     → Returns quiz + all questions including correct_answer
+  5. Instructor fills in question form and hits "Save Question"
+  6. Frontend → POST /api/quizzes/5/questions
+     { questionText, options, correctAnswer, orderIndex }
+     → quizService.createQuestion() validates ownership again
+     → quizRepository.createQuestion() inserts into questions table
+  7. Frontend calls handleManageQuiz(5) again to refresh the question list
+
+================================================================================
+16. STATE MANAGEMENT (FRONTEND)
+================================================================================
+
+Zustand is used for all global client-side state. It is lightweight, requires
+no providers/wrapping, and supports persistence via localStorage.
+
+authStore.ts:
+  State  : user (id, name, email, role), accessToken, isAuthenticated
+  Actions: login(), logout(), setToken()
+  Persist: Yes — stored in localStorage key 'auth-storage'
+           On rehydration, the access token is restored into the
+           in-memory module-level variable in apiClient.ts
+  Usage  : All components that need to know "who is logged in"
+
+sidebarStore.ts:
+  State  : isOpen, currentSubjectId, currentSectionId, sections[]
+  Actions: openSidebar(), closeSidebar(), setCurrentCourse()
+  Persist: No (session-only)
+  Usage  : Video player page — the course sidebar tracks which
+           section/video is currently active
+
+videoStore.ts:
+  State  : currentVideoId, isPlaying, lastSavedPosition
+  Actions: setVideo(), setPlaying(), updatePosition()
+  Persist: No (session-only)
+  Usage  : Coordinates progress saving with the YouTube player callbacks
+
+API CLIENT (apiClient.ts):
+  Not a store, but a critical singleton module.
+  Maintains accessToken in a module-level variable (in-memory only).
+  All API calls go through apiClient<T>(endpoint, options).
+  Automatically handles 401 → token refresh → retry logic.
+  If refresh fails, clears state and redirects to /login.
+
+================================================================================
+17. DEVELOPMENT PHASES SUMMARY
+================================================================================
+
+Phase 1: Role-Based Access Control (RBAC)
+  - Added role column to users table (migration 008)
+  - Implemented authMiddleware and requireRole() middleware
+  - Created AuthGuard component for frontend route protection
+  - Ensured all existing routes work correctly with RBAC layer
+
+Phase 2: Quiz & Assessment System
+  - Created quizzes, questions, quiz_results tables (migration 009)
+  - Built full quiz CRUD API (create, get, submit)
+  - Built quiz-taking UI page at /subjects/:id/quiz/:sectionId
+  - Integrated quiz results into the curriculum tree lock logic
+
+Phase 3: Progress & Resume Learning
+  - Enhanced video progress tracking with is_completed and completed_at
+  - Implemented global resume endpoint (most recent unfinished video)
+  - Added cross-section lock logic (quiz must be passed to unlock next section)
+  - Built "Resume Learning" button on home page and profile
+
+Phase 4: Gamification & Certificates
+  - Added XP, current_streak, longest_streak to users (migration 010)
+  - Created certificates table (migration 010)
+  - Implemented recordActivity() for XP + streak calculation
+  - Built certificate claim + PDF download endpoints
+  - Enhanced profile page with gamification stats display
+
+Phase 5: Instructor Dashboard & Curriculum Builder
+  - Added instructor_id and image_url to subjects (migration 011)
+  - Built instructor dashboard page with analytics
+  - Built course creation form with auto-slug generation
+  - Built full curriculum builder (sections, videos, quizzes)
+  - Built inline Quiz Builder with MCQ question editor
+  - Added ownership validation on all instructor mutations
+  - Added "Instructor View" link to header (role-conditional)
+  - Fixed role-based post-login redirect (student/instructor/admin)
+
+================================================================================
+18. KNOWN LIMITATIONS & FUTURE ENHANCEMENTS
+================================================================================
+
+CURRENT LIMITATIONS:
+  1. Video hosting relies entirely on YouTube URLs (no direct upload).
+  2. Course images are external URLs (no file upload system).
+  3. No real-time features (no notifications, no live sessions).
+  4. No admin panel UI (admin role exists but no dedicated admin dashboard).
+  5. No search or filtering on the courses listing page.
+  6. No email verification on registration.
+  7. Quizzes are limited to 4-option MCQ format only.
+  8. No question editing or deletion from the Quiz Builder UI yet.
+  9. Certificate PDF is basic; no digital signature or blockchain anchoring.
+
+RECOMMENDED FUTURE ENHANCEMENTS:
+  1. File Upload Service → Integrate AWS S3 or Cloudinary for video/image uploads.
+  2. Admin Panel → Build a dedicated UI for user management, role assignment.
+  3. Search & Filter → Add full-text search and category/tag filtering for courses.
+  4. Email System → Add Nodemailer for email verification and password reset.
+  5. Notifications → Real-time WebSocket notifications for new content.
+  6. Discussion Forums → Per-course Q&A forum for student-instructor interaction.
+  7. Analytics → Per-video watch time heatmaps and student engagement metrics.
+  8. Leaderboard → XP-based global or per-course leaderboard.
+  9. Mobile App → React Native app consuming the same REST API.
+ 10. Payment Gateway → Stripe integration for paid course enrollment.
+
+================================================================================
+END OF REPORT
+================================================================================
