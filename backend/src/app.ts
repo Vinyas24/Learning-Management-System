@@ -16,6 +16,7 @@ import quizRoutes from './modules/quizzes/quiz.routes';
 import certificateRoutes from './modules/certificates/certificate.routes';
 import gamificationRoutes from './modules/gamification/gamification.routes';
 import instructorRoutes from './modules/instructor/instructor.routes';
+import adminRoutes from './modules/admin/admin.routes';
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use('/api/quizzes', quizRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/gamification', gamificationRoutes);
 app.use('/api/instructor', instructorRoutes);
+app.use('/api/admin', adminRoutes);
 
 // ── Error Handler (must be last) ────────────────────────────────
 app.use(errorHandler);

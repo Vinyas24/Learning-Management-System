@@ -11,8 +11,8 @@ export const registerHandler = async (
     next: NextFunction
 ): Promise<void> => {
     try {
-        const { email, password, name } = req.body;
-        const result = await authService.register(email, password, name);
+        const { email, password, name, role } = req.body;
+        const result = await authService.register(email, password, name, role);
 
         res.cookie(REFRESH_COOKIE_NAME, result.refreshToken, refreshCookieOptions);
 

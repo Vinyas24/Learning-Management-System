@@ -21,7 +21,8 @@ interface AuthResult {
 export const register = async (
     email: string,
     password: string,
-    name: string
+    name: string,
+    role: string = 'student'
 ): Promise<AuthResult> => {
     // Check if email already exists
     const existing = await db('users').where({ email }).first();
@@ -29,18 +30,22 @@ export const register = async (
         throw createApiError('Email is already registered', 409);
     }
 
+    // Security: only student and instructor can self-register. Admin is seeded only.
+    const allowedRoles = ['student', 'instructor'];
+    const assignedRole = allowedRoles.includes(role) ? role : 'student';
+
     const password_hash = await hashPassword(password);
 
     const [userId] = await db('users').insert({
         email,
         password_hash,
         name,
+        role: assignedRole,
     });
 
     // Issue tokens
     const tokenId = uuidv4();
-    const role = 'student';
-    const accessToken = signAccessToken(userId, role);
+    const accessToken = signAccessToken(userId, assignedRole);
     const refreshToken = signRefreshToken(userId, tokenId);
 
     // Store refresh token hash in DB
@@ -54,7 +59,7 @@ export const register = async (
     });
 
     return {
-        user: { id: userId, name, email, role },
+        user: { id: userId, name, email, role: assignedRole },
         accessToken,
         refreshToken,
     };

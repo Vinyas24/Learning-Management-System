@@ -25,11 +25,12 @@ export async function loginUser(email: string, password: string): Promise<AuthRe
 export async function registerUser(
     name: string,
     email: string,
-    password: string
+    password: string,
+    role: string = 'student'
 ): Promise<AuthResponse['user']> {
     const data = await apiClient<AuthResponse>('/api/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, role }),
         skipAuth: true,
     });
 

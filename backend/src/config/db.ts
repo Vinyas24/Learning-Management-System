@@ -12,8 +12,11 @@ const db = knex({
         ...(env.DB_SSL ? { ssl: { rejectUnauthorized: false } } : {}),
     },
     pool: {
-        min: 2,
+        min: 0,
         max: 10,
+        acquireTimeoutMillis: 30000,
+        createTimeoutMillis: 30000,
+        idleTimeoutMillis: 30000,
     },
     migrations: {
         directory: '../migrations',

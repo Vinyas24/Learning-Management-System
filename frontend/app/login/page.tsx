@@ -19,7 +19,9 @@ export default function LoginPage() {
 
         try {
             const user = await loginUser(email, password);
-            if (user.role === 'instructor' || user.role === 'admin') {
+            if (user.role === 'admin') {
+                router.push('/admin');
+            } else if (user.role === 'instructor') {
                 router.push('/instructor');
             } else {
                 router.push('/profile');

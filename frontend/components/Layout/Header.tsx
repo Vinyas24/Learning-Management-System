@@ -58,7 +58,17 @@ export default function Header() {
                 <nav style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     {isAuthenticated ? (
                         <>
-                            {(user?.role === 'instructor' || user?.role === 'admin') && (
+                            {user?.role === 'admin' && (
+                                <Link href="/admin" style={{
+                                    padding: '8px 18px', borderRadius: '99px',
+                                    fontSize: '14px', fontWeight: 600, color: '#dc2626',
+                                    textDecoration: 'none', transition: 'all 0.2s',
+                                    background: 'rgba(220,38,38,0.08)'
+                                }}>
+                                    🛡️ Admin Panel
+                                </Link>
+                            )}
+                            {user?.role === 'instructor' && (
                                 <Link href="/instructor" style={{
                                     padding: '8px 18px', borderRadius: '99px',
                                     fontSize: '14px', fontWeight: 600, color: '#f97316',

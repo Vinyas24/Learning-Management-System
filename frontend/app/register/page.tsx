@@ -7,6 +7,7 @@ import { registerUser } from '@/lib/auth';
 
 export default function RegisterPage() {
     const router = useRouter();
+    const [selectedRole, setSelectedRole] = useState<'student' | 'instructor'>('student');
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -31,7 +32,7 @@ export default function RegisterPage() {
         setLoading(true);
 
         try {
-            const user = await registerUser(name, email, password);
+            const user = await registerUser(name, email, password, selectedRole);
             if (user.role === 'instructor' || user.role === 'admin') {
                 router.push('/instructor');
             } else {
@@ -45,12 +46,61 @@ export default function RegisterPage() {
         }
     };
 
+    const roleCardStyle = (active: boolean, accent: string): React.CSSProperties => ({
+        flex: 1,
+        padding: '16px',
+        borderRadius: '12px',
+        border: `2px solid ${active ? accent : '#e5e7eb'}`,
+        background: active ? `${accent}10` : 'white',
+        cursor: 'pointer',
+        textAlign: 'center',
+        transition: 'all 0.2s',
+        outline: 'none',
+    });
+
     return (
         <div className="auth-page">
             <div className="auth-card animate-fade-in">
                 <div className="auth-header">
                     <h1>Create your account</h1>
-                    <p>Start your learning journey</p>
+                    <p>Join LearnFlow today</p>
+                </div>
+
+                {/* Role Toggle */}
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '28px' }}>
+                    <button
+                        type="button"
+                        style={roleCardStyle(selectedRole === 'student', '#6366f1')}
+                        onClick={() => setSelectedRole('student')}
+                    >
+                        <div style={{ fontSize: '28px', marginBottom: '6px' }}>🎓</div>
+                        <div style={{
+                            fontSize: '14px', fontWeight: 700,
+                            color: selectedRole === 'student' ? '#6366f1' : '#6b7280'
+                        }}>
+                            I&apos;m a Student
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
+                            Learn from courses
+                        </div>
+                    </button>
+
+                    <button
+                        type="button"
+                        style={roleCardStyle(selectedRole === 'instructor', '#f97316')}
+                        onClick={() => setSelectedRole('instructor')}
+                    >
+                        <div style={{ fontSize: '28px', marginBottom: '6px' }}>📚</div>
+                        <div style={{
+                            fontSize: '14px', fontWeight: 700,
+                            color: selectedRole === 'instructor' ? '#f97316' : '#6b7280'
+                        }}>
+                            Become an Instructor
+                        </div>
+                        <div style={{ fontSize: '11px', color: '#9ca3af', marginTop: '2px' }}>
+                            Create &amp; teach courses
+                        </div>
+                    </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="auth-form">
@@ -114,8 +164,17 @@ export default function RegisterPage() {
                         type="submit"
                         className="btn btn-primary btn-full"
                         disabled={loading}
+                        style={{
+                            background: selectedRole === 'instructor'
+                                ? 'linear-gradient(135deg, #f97316, #ec4899)'
+                                : undefined
+                        }}
                     >
-                        {loading ? 'Creating account…' : 'Create Account'}
+                        {loading
+                            ? 'Creating account…'
+                            : selectedRole === 'instructor'
+                                ? '🚀 Create Instructor Account'
+                                : 'Create Account'}
                     </button>
                 </form>
 
